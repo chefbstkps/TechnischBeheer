@@ -1,0 +1,192 @@
+.activity-detail {
+  padding-bottom: 2rem;
+}
+
+.activity-detail-loading {
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.activity-detail-back {
+  display: inline-block;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.activity-detail-back:hover {
+  color: var(--accent);
+}
+
+.activity-detail-header h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.75rem;
+}
+
+.activity-detail-info,
+.activity-detail-aanpak {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.activity-detail-info h2,
+.activity-detail-aanpak h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.activity-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.activity-detail-grid-full {
+  grid-column: 1 / -1;
+}
+
+.activity-detail-melding {
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+}
+
+.activity-detail-aanpak-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.activity-detail-empty {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Aanpak form */
+.aanpak-form-new {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.aanpak-form-new .aanpak-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.aanpak-form-new .aanpak-form-row label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.aanpak-form-new .aanpak-form-row input,
+.aanpak-form-new .aanpak-form-row select,
+.aanpak-form-new .aanpak-form-row textarea {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.aanpak-form-new .aanpak-form-row textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.aanpak-form-new .aanpak-form-row-full {
+  grid-column: 1 / -1;
+}
+
+.aanpak-form-new .aanpak-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.aanpak-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.aanpak-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.aanpak-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.aanpak-btn-bewerken {
+  margin-left: auto;
+  padding: 0.35rem 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aanpak-btn-bewerken:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.aanpak-edit-form {
+  margin-top: 0.75rem;
+}
+
+.aanpak-type {
+  font-weight: 600;
+}
+
+.aanpak-datum {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.aanpak-bedrag-row {
+  margin: 0.5rem 0 0;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--accent);
+}
+
+.aanpak-bedrag-row + .aanpak-beschrijving {
+  margin-top: 0.5rem;
+}
+
+.aanpak-beschrijving {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+/* Status badge voor begrotingsfase */
+.status-begrotingsfase {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}

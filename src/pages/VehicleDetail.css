@@ -1,0 +1,251 @@
+.vehicle-detail {
+  padding-bottom: 2rem;
+}
+
+.vehicle-detail-loading {
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.vehicle-detail-back {
+  display: inline-block;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.vehicle-detail-back:hover {
+  color: var(--accent);
+}
+
+.vehicle-detail-header h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.75rem;
+}
+
+.vehicle-detail-info,
+.vehicle-detail-costs,
+.vehicle-detail-repairs {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.vehicle-detail-info h2,
+.vehicle-detail-costs h2,
+.vehicle-detail-repairs h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.vehicle-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.vehicle-detail-grid-full {
+  grid-column: 1 / -1;
+}
+
+.vehicle-detail-total {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.vehicle-detail-repairs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Nieuw reparatieformulier */
+.repair-form-new {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.repair-form-new .repair-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.repair-form-new .repair-form-row label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.repair-form-new .repair-form-row input,
+.repair-form-new .repair-form-row select,
+.repair-form-new .repair-form-row textarea {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.repair-form-new .repair-form-row textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+.repair-form-new .repair-form-row-full {
+  grid-column: 1 / -1;
+}
+
+.repair-form-new .repair-form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.repair-form-inline,
+.part-form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.repair-form-inline select,
+.part-form-inline input,
+.part-form-inline select {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+.repairs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.repair-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.repair-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.repair-reden {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.repair-cost {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.repair-btn-afgehandeld {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  background: rgba(52, 211, 153, 0.2);
+  border: 1px solid var(--success);
+  border-radius: 6px;
+  color: var(--success);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.repair-btn-afgehandeld:hover:not(:disabled) {
+  background: rgba(52, 211, 153, 0.35);
+}
+
+.repair-btn-afgehandeld:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.repair-btn-bewerken {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.repair-btn-bewerken:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.repair-edit-form {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.repair-card-meta {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.repair-melding {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+}
+
+.repair-parts {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.repair-parts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.parts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.parts-table th,
+.parts-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.parts-table th {
+  background: var(--bg-primary);
+  font-weight: 600;
+}

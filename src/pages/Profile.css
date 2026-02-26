@@ -1,0 +1,122 @@
+.profile-page {
+  max-width: 560px;
+}
+
+.profile-title {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.profile-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.profile-tab {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.profile-tab:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.profile-tab.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.profile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.profile-field input {
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+.profile-field input:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.profile-pwd-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profile-pwd-wrap input {
+  flex: 1;
+  padding-right: 2.5rem;
+}
+
+.profile-pwd-toggle {
+  position: absolute;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.profile-pwd-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.profile-error {
+  padding: 0.75rem;
+  background: rgba(248, 113, 113, 0.15);
+  border: 1px solid var(--error);
+  border-radius: 8px;
+  color: var(--error);
+  font-size: 0.875rem;
+}
+
+.profile-success {
+  padding: 0.75rem;
+  background: rgba(52, 211, 153, 0.15);
+  border: 1px solid var(--success);
+  border-radius: 8px;
+  color: var(--success);
+  font-size: 0.875rem;
+}
+
+.profile-info {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}

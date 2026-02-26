@@ -1,0 +1,179 @@
+.parts-management {
+  padding-bottom: 2rem;
+}
+
+.parts-management-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.parts-management h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+}
+
+.parts-management-desc {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.parts-management-btn-add {
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px dashed var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.parts-management-btn-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.parts-management-list-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.parts-management-loading {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.parts-management-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.parts-management-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 0.35rem;
+}
+
+.parts-management-item:last-child {
+  margin-bottom: 0;
+}
+
+.parts-management-item-add {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.parts-management-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.parts-management-name {
+  font-weight: 500;
+}
+
+.parts-management-label .parts-management-desc {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.parts-management-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.parts-management-btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.parts-management-btn-icon:hover {
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.parts-management-btn-danger:hover {
+  color: var(--danger, #e57373);
+}
+
+.parts-management-edit-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.parts-management-edit-form input {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.4rem 0.6rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.parts-management-edit-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.parts-management-edit-form input::placeholder {
+  color: var(--text-muted);
+}
+
+.parts-management-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.parts-management-edit-actions button:not(.btn-secondary) {
+  padding: 0.4rem 0.75rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.parts-management-edit-actions button:not(.btn-secondary):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.parts-management .btn-secondary {
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.parts-management .btn-secondary:hover {
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
+}
