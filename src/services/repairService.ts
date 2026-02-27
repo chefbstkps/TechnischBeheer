@@ -7,6 +7,22 @@ import type {
 } from '../types/database';
 
 export const RepairService = {
+  /** Alle reparaties met voertuiginformatie (license_plate) voor overzichtspagina. */
+  async listAll(): Promise<(RepairWithParts & { vehicle?: { id: string; license_plate: string } })[]> {
+    const { data, error } = await getSupabase()
+      .from('repairs')
+      .select(
+        `
+        *,
+        repair_parts(*),
+        vehicle:vehicles(id, license_plate)
+      `
+      )
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
   async listByVehicle(vehicleId: string): Promise<RepairWithParts[]> {
     const { data, error } = await getSupabase()
       .from('repairs')

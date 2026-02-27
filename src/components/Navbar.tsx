@@ -7,6 +7,7 @@ import {
   Tag,
   Car,
   Wrench,
+  ClipboardList,
   Box,
   Menu,
   X,
@@ -45,8 +46,12 @@ export default function Navbar() {
             Voertuigbeheer
           </Link>
           <Link to="/werkzaamheden" className="navbar-link">
-            <Wrench size={20} />
+            <ClipboardList size={20} />
             Werkzaamheden
+          </Link>
+          <Link to="/reparaties" className="navbar-link">
+            <Wrench size={20} />
+            Reparaties
           </Link>
           <div className="navbar-hamburger-wrap">
             <button

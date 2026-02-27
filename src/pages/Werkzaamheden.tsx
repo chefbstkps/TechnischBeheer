@@ -126,6 +126,11 @@ export default function Werkzaamheden() {
         }).format(n)
       : '-';
 
+  const formatMeldingForTable = (melding: string | null) => {
+    if (!melding) return '-';
+    return melding.length > 40 ? `${melding.slice(0, 40)}...` : melding;
+  };
+
   return (
     <div className="werkzaamheden">
       <h1>Werkzaamheden</h1>
@@ -268,10 +273,10 @@ export default function Werkzaamheden() {
           <table className="werkzaamheden-table">
             <thead>
               <tr>
-                <th>Soort werkzaamheden</th>
+                <th>Afdeling</th>
                 <th>Structuur</th>
                 <th>Afdeling</th>
-                <th>Datum melding</th>
+                <th>Datum</th>
                 <th>Melding</th>
                 <th>Kosten</th>
                 <th>Status</th>
@@ -300,7 +305,7 @@ export default function Werkzaamheden() {
                     {(w.department as { name?: string })?.name ?? '-'}
                   </td>
                   <td>{formatDate(w.datum_melding)}</td>
-                  <td>{w.melding ?? '-'}</td>
+                  <td>{formatMeldingForTable(w.melding)}</td>
                   <td className="werkzaamheden-kosten">{formatCurrency(kostenByWorkId[w.id])}</td>
                   <td>
                     <span

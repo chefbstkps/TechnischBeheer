@@ -1,0 +1,186 @@
+.repairs-page {
+  padding-bottom: 2rem;
+}
+
+.repairs-page h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+}
+
+.repairs-page-desc {
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem;
+  font-size: 0.9375rem;
+}
+
+.repairs-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.repairs-stats .stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.repairs-stats .stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border-color);
+  opacity: 0.5;
+}
+
+.repairs-stats .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.repairs-stats .stat-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-card-total .stat-card-icon {
+  background: rgba(99, 102, 241, 0.12);
+  color: rgb(79, 70, 229);
+}
+
+.stat-card-total::before {
+  background: rgb(79, 70, 229);
+  opacity: 1;
+}
+
+.stat-card-afgehandeld .stat-card-icon {
+  background: rgba(34, 197, 94, 0.12);
+  color: rgb(22, 163, 74);
+}
+
+.stat-card-afgehandeld::before {
+  background: rgb(22, 163, 74);
+  opacity: 1;
+}
+
+.stat-card-behandeling .stat-card-icon {
+  background: rgba(234, 179, 8, 0.14);
+  color: rgb(202, 138, 4);
+}
+
+.stat-card-behandeling::before {
+  background: rgb(202, 138, 4);
+  opacity: 1;
+}
+
+.stat-card-costs .stat-card-icon {
+  background: rgba(56, 189, 248, 0.14);
+  color: rgb(14, 165, 233);
+}
+
+.stat-card-costs::before {
+  background: rgb(14, 165, 233);
+  opacity: 1;
+}
+
+.repairs-stats .stat-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.repairs-stats .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.repairs-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.repairs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.repairs-table th,
+.repairs-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.repairs-table th {
+  background: var(--bg-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.repairs-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.repairs-row-clickable {
+  cursor: pointer;
+}
+
+.repairs-row-clickable:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.repairs-license-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.repairs-license-link:hover {
+  text-decoration: underline;
+}
+
+.repairs-melding {
+  max-width: 280px;
+}
+
+.repairs-kosten {
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.repairs-table .status-in-behandeling {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.repairs-table .status-afgehandeld {
+  background: rgba(52, 211, 153, 0.2);
+  color: var(--success, #34d399);
+}
+
+.repairs-empty-cell {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: 2rem;
+  text-align: center;
+}

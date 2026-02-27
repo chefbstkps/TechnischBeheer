@@ -12,6 +12,7 @@ import Brands from './pages/Brands';
 import VehicleManagement from './pages/VehicleManagement';
 import VehicleDetail from './pages/VehicleDetail';
 import Werkzaamheden from './pages/Werkzaamheden';
+import Repairs from './pages/Repairs';
 import ActivityDetail from './pages/ActivityDetail';
 import PartsManagement from './pages/PartsManagement';
 import Profile from './pages/Profile';
@@ -43,6 +44,7 @@ export default function App() {
                 <Route path="/automontage" element={<VehicleManagement />} />
                 <Route path="/automontage/voertuig/:id" element={<VehicleDetail />} />
                 <Route path="/werkzaamheden" element={<Werkzaamheden />} />
+                <Route path="/reparaties" element={<Repairs />} />
                 <Route path="/werkzaamheden/melding/:id" element={<ActivityDetail />} />
                 <Route path="/onderdelen" element={<PartsManagement />} />
                 <Route
