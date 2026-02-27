@@ -1,0 +1,81 @@
+.users-log-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ul-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ul-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.ul-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.ul-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.ul-filters input,
+.ul-filters select {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.ul-stats {
+  display: flex;
+  gap: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.ul-table-wrap {
+  overflow: auto;
+}
+
+.ul-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.ul-table th,
+.ul-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ul-table th {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.ul-error {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--error);
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--error);
+}

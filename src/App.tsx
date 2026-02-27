@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PageVisibilityGuard from './components/PageVisibilityGuard';
 import AppLayout from './components/AppLayout';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Organisatie from './pages/Organisatie';
 import Brands from './pages/Brands';
@@ -14,6 +15,9 @@ import Werkzaamheden from './pages/Werkzaamheden';
 import ActivityDetail from './pages/ActivityDetail';
 import PartsManagement from './pages/PartsManagement';
 import Profile from './pages/Profile';
+import UserManagement from './pages/UserManagement';
+import UserDetails from './pages/UserDetails';
+import UsersLog from './pages/UsersLog';
 import './App.css';
 
 export default function App() {
@@ -23,6 +27,7 @@ export default function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route
               element={
                 <ProtectedRoute>
@@ -40,6 +45,30 @@ export default function App() {
                 <Route path="/werkzaamheden" element={<Werkzaamheden />} />
                 <Route path="/werkzaamheden/melding/:id" element={<ActivityDetail />} />
                 <Route path="/onderdelen" element={<PartsManagement />} />
+                <Route
+                  path="/user-management"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <UserManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/user-management/:id"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <UserDetails />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/users-log"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <UsersLog />
+                    </ProtectedRoute>
+                  }
+                />
               </Route>
             </Route>
           </Routes>

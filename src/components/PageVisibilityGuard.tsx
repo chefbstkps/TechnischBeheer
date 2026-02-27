@@ -9,7 +9,21 @@ const PATH_TO_PAGE_KEY: Record<string, UserPageKey> = {
   '/automontage': 'automontage',
   '/werkzaamheden': 'werkzaamheden',
   '/onderdelen': 'onderdelen',
+  '/user-management': 'user_management',
+  '/users-log': 'users_log',
 };
+
+function resolvePageKey(pathname: string): UserPageKey | undefined {
+  if (PATH_TO_PAGE_KEY[pathname]) {
+    return PATH_TO_PAGE_KEY[pathname];
+  }
+
+  if (pathname.startsWith('/automontage/')) return 'automontage';
+  if (pathname.startsWith('/werkzaamheden/')) return 'werkzaamheden';
+  if (pathname.startsWith('/user-management/')) return 'user_management';
+
+  return undefined;
+}
 
 export default function PageVisibilityGuard() {
   const { user } = useAuth();
@@ -17,7 +31,7 @@ export default function PageVisibilityGuard() {
   const pathname = location.pathname;
 
   if (user?.page_visibility) {
-    const pageKey = PATH_TO_PAGE_KEY[pathname];
+    const pageKey = resolvePageKey(pathname);
     if (pageKey && user.page_visibility[pageKey] === false) {
       return <Navigate to="/" replace />;
     }

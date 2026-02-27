@@ -1,0 +1,129 @@
+.user-management-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.um-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.um-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.um-card h2 {
+  margin: 0 0 0.75rem;
+}
+
+.um-grid,
+.um-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.um-grid label,
+.um-edit-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.um-grid input,
+.um-grid select,
+.um-edit-grid input,
+.um-edit-grid select {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.um-actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.um-error,
+.um-success {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.um-error {
+  border: 1px solid var(--error);
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--error);
+}
+
+.um-success {
+  border: 1px solid var(--success);
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success);
+}
+
+.um-table-wrap {
+  overflow: auto;
+}
+
+.um-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 960px;
+}
+
+.um-table th,
+.um-table td {
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  vertical-align: top;
+}
+
+.um-table th {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.um-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.um-checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem !important;
+}
+
+.um-reset-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.um-reset-box input {
+  min-width: 220px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}

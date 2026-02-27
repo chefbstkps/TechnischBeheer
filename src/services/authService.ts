@@ -1,6 +1,19 @@
 import { getSupabase } from '../lib/supabase';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../config/supabase-config';
-import type { AppUser, LoginCredentials, ChangePasswordData, UserPageVisibility, UserPageKey } from '../types/auth';
+import { USER_PAGE_KEYS } from '../types/auth';
+import type {
+  ActivityType,
+  AppUser,
+  ChangePasswordData,
+  CreateUserData,
+  LoginCredentials,
+  ResetPasswordData,
+  SignupData,
+  UpdateUserData,
+  UserActivityLogEntry,
+  UserPageKey,
+  UserPageVisibility,
+} from '../types/auth';
 
 const STORAGE_KEYS = {
   user: 'tb_user',
@@ -31,6 +44,11 @@ function mapRowToAppUser(row: Record<string, unknown>): AppUser {
     structuur: row.structuur as string | undefined,
     afdeling: row.afdeling as string | undefined,
   };
+}
+
+function cleanText(value?: string): string | null {
+  const next = value?.trim();
+  return next ? next : null;
 }
 
 export const authStorageKeys = STORAGE_KEYS;
@@ -138,16 +156,106 @@ export async function changePassword(userId: string, data: ChangePasswordData): 
   await logActivity(userId, 'password_change', true);
 }
 
+export async function signup(data: SignupData): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase.rpc('signup_user', {
+    p_username: data.username.trim(),
+    p_email: data.email.trim(),
+    p_first_name: data.first_name.trim(),
+    p_last_name: data.last_name.trim(),
+    p_password: data.password,
+    p_telefoonnummer: cleanText(data.telefoonnummer),
+    p_rang: cleanText(data.rang),
+    p_organisatie: cleanText(data.organisatie),
+    p_structuur: cleanText(data.structuur),
+    p_afdeling: cleanText(data.afdeling),
+  });
+
+  if (error) throw new Error(error.message || 'Registratie mislukt');
+}
+
+export async function getAllUsers(): Promise<AppUser[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc('get_all_users');
+  if (error) throw new Error(error.message || 'Gebruikers laden mislukt');
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  return rows.map((row) => mapRowToAppUser(row as Record<string, unknown>));
+}
+
+export async function createUser(userData: CreateUserData): Promise<AppUser> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc('create_user', {
+    p_username: userData.username.trim(),
+    p_email: userData.email.trim(),
+    p_first_name: userData.first_name.trim(),
+    p_last_name: userData.last_name.trim(),
+    p_password: userData.password,
+    p_role: userData.role,
+    p_telefoonnummer: cleanText(userData.telefoonnummer),
+    p_rang: cleanText(userData.rang),
+    p_organisatie: cleanText(userData.organisatie),
+    p_structuur: cleanText(userData.structuur),
+    p_afdeling: cleanText(userData.afdeling),
+  });
+
+  if (error) throw new Error(error.message || 'Gebruiker aanmaken mislukt');
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  const row = rows[0] as Record<string, unknown> | undefined;
+  if (!row) throw new Error('Gebruiker aanmaken mislukt');
+  return mapRowToAppUser(row);
+}
+
+export async function updateUser(userId: string, userData: UpdateUserData): Promise<AppUser> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc('update_user', {
+    p_user_id: userId,
+    p_first_name: userData.first_name?.trim() ?? null,
+    p_last_name: userData.last_name?.trim() ?? null,
+    p_email: userData.email?.trim() ?? null,
+    p_role: userData.role ?? null,
+    p_is_active: userData.is_active ?? null,
+    p_session_timeout_minutes: userData.session_timeout_minutes ?? null,
+    p_session_timeout_type: userData.session_timeout_type ?? null,
+    p_telefoonnummer: cleanText(userData.telefoonnummer),
+    p_rang: cleanText(userData.rang),
+    p_organisatie: cleanText(userData.organisatie),
+    p_structuur: cleanText(userData.structuur),
+    p_afdeling: cleanText(userData.afdeling),
+  });
+
+  if (error) throw new Error(error.message || 'Gebruiker bijwerken mislukt');
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  const row = rows[0] as Record<string, unknown> | undefined;
+  if (!row) throw new Error('Gebruiker bijwerken mislukt');
+  return mapRowToAppUser(row);
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase.rpc('delete_user', {
+    p_user_id: userId,
+  });
+  if (error) throw new Error(error.message || 'Gebruiker verwijderen mislukt');
+}
+
+export async function resetPassword(data: ResetPasswordData): Promise<void> {
+  const supabase = getSupabase();
+  const { error } = await supabase.rpc('reset_password', {
+    p_user_id: data.user_id,
+    p_new_password: data.new_password,
+  });
+  if (error) throw new Error(error.message || 'Wachtwoord resetten mislukt');
+}
+
 export async function getUserPageVisibility(userId: string): Promise<UserPageVisibility> {
   const supabase = getSupabase();
   const { data, error } = await supabase.rpc('get_user_page_visibility', { p_user_id: userId });
   if (error) return {} as UserPageVisibility;
   const rows = Array.isArray(data) ? data : [];
   const visibility = {} as UserPageVisibility;
-  const keys = ['dashboard', 'organisatie', 'brands', 'automontage', 'werkzaamheden', 'onderdelen'] as const;
-  keys.forEach((k) => (visibility[k] = true)); // default visible
+  USER_PAGE_KEYS.forEach((k) => (visibility[k] = true)); // default visible
   rows.forEach((r: { page_key: string; visible: boolean }) => {
-    if (keys.includes(r.page_key as UserPageKey)) visibility[r.page_key as UserPageKey] = r.visible;
+    if (USER_PAGE_KEYS.includes(r.page_key as UserPageKey)) visibility[r.page_key as UserPageKey] = r.visible;
   });
   return visibility;
 }
@@ -182,7 +290,7 @@ export async function setUserSessionTimeout(
 
 export async function logActivity(
   userId: string,
-  activityType: 'login' | 'logout' | 'password_change' | 'profile_update',
+  activityType: ActivityType,
   success: boolean,
   errorMessage?: string,
   ipAddress?: string,
@@ -196,5 +304,35 @@ export async function logActivity(
     p_error_message: errorMessage ?? null,
     p_ip_address: ipAddress ?? null,
     p_user_agent: userAgent ?? null,
+  });
+}
+
+export async function getUserActivityLogs(userId?: string): Promise<UserActivityLogEntry[]> {
+  const supabase = getSupabase();
+  let query = supabase
+    .from('user_activity_logs')
+    .select('id,user_id,activity_type,success,error_message,created_at,ip_address,user_agent,app_users(username)')
+    .order('created_at', { ascending: false });
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message || 'Activiteitenlog laden mislukt');
+
+  return (data ?? []).map((row) => {
+    const userObj = row.app_users as { username?: string } | null;
+    return {
+      id: row.id as string,
+      user_id: row.user_id as string,
+      username: userObj?.username ?? 'Onbekend',
+      activity_type: row.activity_type as ActivityType,
+      success: row.success as boolean,
+      error_message: (row.error_message as string | null) ?? null,
+      created_at: row.created_at as string,
+      ip_address: (row.ip_address as string | null) ?? null,
+      user_agent: (row.user_agent as string | null) ?? null,
+    };
   });
 }

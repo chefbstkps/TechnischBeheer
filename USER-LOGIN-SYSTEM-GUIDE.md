@@ -23,7 +23,7 @@ The system uses **custom authentication** (not Supabase Auth). It stores users i
 
 ```
 ┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│   Login Page    │────▶ │   AuthContext    │────▶│  AuthService    │
+│   Login Page    │────▶ │   AuthContext   │─────▶│  AuthService    │
 │  (username/pwd) │      │ (state, signIn,  │      │ (login, logout, │
 └─────────────────┘      │  session timeout)│      │  signup, RPCs)  │
 ┌─────────────────┐      └────────┬─────────┘      └────────┬────────┘

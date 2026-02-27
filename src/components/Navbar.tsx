@@ -18,10 +18,13 @@ import './Navbar.css';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   async function handleLogout() {
+    setUserMenuOpen(false);
+    setMenuOpen(false);
     await signOut();
     navigate('/login');
   }
@@ -87,48 +90,49 @@ export default function Navbar() {
                     <Box size={20} />
                     Onderdelen
                   </Link>
-                  {user && (
-                    <>
-                      <Link
-                        to="/profile"
-                        className="navbar-dropdown-link"
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <User size={20} />
-                        Mijn profiel
-                      </Link>
-                      <button
-                        type="button"
-                        className="navbar-dropdown-link navbar-dropdown-btn"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          handleLogout();
-                        }}
-                      >
-                        <LogOut size={20} />
-                        Uitloggen
-                      </button>
-                    </>
-                  )}
                 </div>
               </>
             )}
           </div>
           {user && (
             <div className="navbar-auth">
-              <Link to="/profile" className="navbar-link" title={user.username}>
-                <User size={20} />
-                {user.username}
-              </Link>
-              <button
-                type="button"
-                className="navbar-link navbar-logout"
-                onClick={handleLogout}
-                title="Uitloggen"
-              >
-                <LogOut size={20} />
-                Uitloggen
-              </button>
+              <div className="navbar-user-menu-wrap">
+                <button
+                  type="button"
+                  className="navbar-link navbar-user-menu-btn"
+                  title={user.username}
+                  onClick={() => setUserMenuOpen((open) => !open)}
+                  aria-expanded={userMenuOpen}
+                  aria-label={userMenuOpen ? 'Gebruikersmenu sluiten' : 'Gebruikersmenu openen'}
+                >
+                  <User size={20} />
+                  {user.username}
+                </button>
+                {userMenuOpen && (
+                  <div className="navbar-user-menu">
+                    {user.role === 'admin' && (
+                      <>
+                        <Link to="/user-management" className="navbar-user-menu-item" onClick={() => setUserMenuOpen(false)}>
+                          <User size={18} />
+                          User Management
+                        </Link>
+                        <Link to="/users-log" className="navbar-user-menu-item" onClick={() => setUserMenuOpen(false)}>
+                          <User size={18} />
+                          Users Log
+                        </Link>
+                      </>
+                    )}
+                    <Link to="/profile" className="navbar-user-menu-item" onClick={() => setUserMenuOpen(false)}>
+                      <User size={18} />
+                      Mijn profiel
+                    </Link>
+                    <button type="button" className="navbar-user-menu-item navbar-dropdown-btn" onClick={handleLogout}>
+                      <LogOut size={18} />
+                      Uitloggen
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

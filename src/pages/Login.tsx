@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import './Login.css';
@@ -102,6 +102,9 @@ export default function Login() {
             {submitting ? 'Bezig...' : 'Inloggen'}
           </button>
         </form>
+        <p className="login-signup-link">
+          Nog geen account? <Link to="/signup">Registreer hier</Link>
+        </p>
       </div>
     </div>
   );
