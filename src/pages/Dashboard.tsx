@@ -105,7 +105,11 @@ export default function Dashboard() {
           <div className="recent-list">
             {recentMaintenance?.length ? (
               recentMaintenance.map((w: { id: string; afdeling: string; melding: string | null; status: string; datum_melding: string }) => (
-                <div key={w.id} className="recent-item">
+                <Link
+                  key={w.id}
+                  to={`/werkzaamheden/melding/${w.id}`}
+                  className="recent-item"
+                >
                   <span className="recent-item-main">
                     {w.afdeling} – {w.melding?.slice(0, 50) ?? 'Geen melding'}
                     {w.melding && w.melding.length > 50 ? '...' : ''}
@@ -113,7 +117,7 @@ export default function Dashboard() {
                   <span className="recent-item-meta">
                     {formatDate(w.datum_melding)} • {capitalizeFirst(w.status)}
                   </span>
-                </div>
+                </Link>
               ))
             ) : (
               <p className="recent-empty">Geen recente werkzaamheden</p>

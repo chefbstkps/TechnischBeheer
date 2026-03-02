@@ -2,9 +2,37 @@
   padding-bottom: 2rem;
 }
 
-.repairs-page h1 {
+.repairs-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.repairs-page-header h1 {
   margin: 0 0 0.5rem;
   font-size: 1.75rem;
+}
+
+.repairs-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.repairs-add-btn:hover {
+  filter: brightness(1.1);
 }
 
 .repairs-page-desc {
@@ -18,6 +46,30 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2rem;
+}
+
+@media (max-width: 479px) {
+  .repairs-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .repairs-stats .stat-card {
+    padding: 1rem;
+  }
+
+  .repairs-stats .stat-card-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .repairs-stats .stat-value {
+    font-size: 1rem !important;
+  }
+
+  .repairs-stats .stat-label {
+    font-size: 0.6875rem;
+  }
 }
 
 .repairs-stats .stat-card {

@@ -19,6 +19,7 @@ export default function Login() {
     return (
       <div className="login-page">
         <div className="login-card">
+          <img src="/tb.svg" alt="Technisch Beheer" className="login-logo" />
           <p style={{ color: 'var(--text-secondary)' }}>Laden...</p>
         </div>
       </div>
@@ -54,6 +55,7 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
+        <img src="/tb.svg" alt="Technisch Beheer" className="login-logo" />
         <h1 className="login-title">Technisch Beheer</h1>
         <p className="login-subtitle">Log in om door te gaan</p>
 

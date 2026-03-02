@@ -1,13 +1,16 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, Clock, CircleDollarSign, FileText } from 'lucide-react';
+import { CheckCircle2, Clock, CircleDollarSign, FileText, Plus } from 'lucide-react';
 import { RepairService } from '../services/repairService';
 import { capitalizeFirst } from '../utils/string';
+import AddRepairModal from '../components/AddRepairModal';
 import type { RepairWithParts, WerkzaamStatus } from '../types/database';
 import './Repairs.css';
 
 export default function Repairs() {
   const navigate = useNavigate();
+  const [showAddRepairModal, setShowAddRepairModal] = useState(false);
   const { data: repairs = [], isLoading } = useQuery({
     queryKey: ['repairs-all'],
     queryFn: () => RepairService.listAll(),
@@ -44,10 +47,22 @@ export default function Repairs() {
 
   return (
     <div className="repairs-page">
-      <h1>Reparaties</h1>
-      <p className="repairs-page-desc">
-        Overzicht van alle reparaties geregistreerd via voertuigpaspoort
-      </p>
+      <div className="repairs-page-header">
+        <div>
+          <h1>Reparaties</h1>
+          <p className="repairs-page-desc">
+            Overzicht van alle reparaties geregistreerd via voertuigpaspoort
+          </p>
+        </div>
+        <button
+          type="button"
+          className="repairs-add-btn"
+          onClick={() => setShowAddRepairModal(true)}
+        >
+          <Plus size={18} strokeWidth={2.5} />
+          Nieuwe reparatie
+        </button>
+      </div>
 
       <div className="repairs-stats">
         <div className="stat-card stat-card-total">
@@ -141,6 +156,10 @@ export default function Repairs() {
           </table>
         )}
       </div>
+
+      {showAddRepairModal && (
+        <AddRepairModal onClose={() => setShowAddRepairModal(false)} />
+      )}
     </div>
   );
 }

@@ -16,6 +16,15 @@
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
+.login-logo {
+  display: block;
+  width: auto;
+  max-width: 160px;
+  max-height: 64px;
+  margin: 0 auto 1.25rem;
+  object-fit: contain;
+}
+
 .login-title {
   margin: 0 0 0.25rem 0;
   font-size: 1.5rem;
