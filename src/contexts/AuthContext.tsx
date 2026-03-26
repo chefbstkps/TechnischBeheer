@@ -34,11 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((s) => (s.user ? { ...s, user: null } : s));
   }, []);
 
-  const invalidateSession = useCallback(() => {
+  const invalidateSession = useCallback((reason: string) => {
+    const sessionToken = localStorage.getItem(AuthService.authStorageKeys.sessionToken);
+    if (state.user) {
+      AuthService.autoLogout({ userId: state.user.id, sessionToken, reason }).catch(() => {});
+    }
     clearSession();
     setState({ user: null, loading: false });
     window.location.replace('/login');
-  }, [clearSession]);
+  }, [clearSession, state.user]);
 
   const restoreSession = useCallback(async (): Promise<boolean> => {
     const raw = localStorage.getItem(AuthService.authStorageKeys.user);
@@ -56,20 +60,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({ user: null, loading: false });
       return false;
     }
-    const isValid = await AuthService.validateSession(stored.id, sessionToken);
-    if (!isValid) {
+    const validation = await AuthService.validateSession(stored.id, sessionToken);
+    if (validation.status === 'invalid') {
       clearSession();
       setState({ user: null, loading: false });
       return false;
     }
-    const user = await AuthService.getCurrentUser(stored.id);
-    if (!user) {
-      clearSession();
-      setState({ user: null, loading: false });
-      return false;
+
+    // On transient errors (offline/Supabase hiccup), keep the stored session and retry via periodic validation.
+    let baseUser: AppUser | null = null;
+    try {
+      baseUser = await AuthService.getCurrentUser(stored.id);
+    } catch {
+      baseUser = null;
     }
-    const visibility = await AuthService.getUserPageVisibility(user.id);
-    const merged: AppUser = { ...user, page_visibility: visibility };
+
+    const user = baseUser ?? stored;
+    let visibility: Awaited<ReturnType<typeof AuthService.getUserPageVisibility>> | null = null;
+    try {
+      visibility = await AuthService.getUserPageVisibility(user.id);
+    } catch {
+      visibility = stored.page_visibility ?? null;
+    }
+
+    const merged: AppUser = { ...user, page_visibility: visibility ?? user.page_visibility };
     try {
       localStorage.setItem(AuthService.authStorageKeys.user, JSON.stringify(merged));
     } catch {}
@@ -104,12 +118,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const validate = async () => {
       const sessionToken = localStorage.getItem(AuthService.authStorageKeys.sessionToken);
       if (!sessionToken) {
-        invalidateSession();
+        invalidateSession('Sessie-token ontbreekt (localStorage).');
         return;
       }
-      const valid = await AuthService.validateSession(state.user!.id, sessionToken);
-      if (!valid) {
-        invalidateSession();
+      const result = await AuthService.validateSession(state.user!.id, sessionToken);
+      if (result.status === 'invalid') {
+        invalidateSession('Sessie is server-side ongeldig (validate_user_session=false).');
       }
     };
 
@@ -166,7 +180,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (timeoutRef.current) clearInterval(timeoutRef.current);
         timeoutRef.current = null;
         const sessionToken = localStorage.getItem(AuthService.authStorageKeys.sessionToken);
-        AuthService.logout(state.user!.id, sessionToken).catch(() => {});
+        AuthService.autoLogout({
+          userId: state.user!.id,
+          sessionToken,
+          reason: 'Sessie verlopen door ingestelde session_timeout.',
+        }).catch(() => {});
         clearSession();
         window.location.replace('/login');
       }

@@ -1,0 +1,68 @@
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 1.25rem;
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  color: #fff;
+  font-size: 0.875rem;
+  z-index: 1000;
+}
+
+.update-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.update-banner-icon {
+  flex-shrink: 0;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.update-banner-current {
+  opacity: 0.75;
+  font-size: 0.8rem;
+}
+
+.update-banner-btn {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.update-banner-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.update-banner-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.update-banner-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}

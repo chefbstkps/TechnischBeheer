@@ -25,6 +25,11 @@ const STORAGE_KEYS = {
   lastActivityAt: 'tb_last_activity_at',
 };
 
+type SessionValidationResult =
+  | { status: 'valid' }
+  | { status: 'invalid' }
+  | { status: 'error'; errorMessage?: string };
+
 function mapRowToAppUser(row: Record<string, unknown>): AppUser {
   return {
     id: row.id as string,
@@ -90,10 +95,14 @@ async function loginViaEdgeFunction(
     } catch {
       if (text) msg = text;
     }
+    logActivity(null, 'failed_login', false, `Gebruiker: ${credentials.username.trim()} — ${msg}`, ip, userAgent).catch(() => {});
     throw new Error(msg);
   }
   const row = JSON.parse(text) as Record<string, unknown>;
-  if (!row?.id) throw new Error('Ongeldige gebruikersnaam of wachtwoord');
+  if (!row?.id) {
+    logActivity(null, 'failed_login', false, `Gebruiker: ${credentials.username.trim()} — Ongeldige gebruikersnaam of wachtwoord`, ip, userAgent).catch(() => {});
+    throw new Error('Ongeldige gebruikersnaam of wachtwoord');
+  }
   return mapLoginResponse(row);
 }
 
@@ -167,12 +176,17 @@ export async function login(
       }
       return result;
     }
-    throw new Error(error.message || 'Login mislukt');
+    const msg = error.message || 'Login mislukt';
+    logActivity(null, 'failed_login', false, `Gebruiker: ${credentials.username.trim()} — ${msg}`, ip, userAgent).catch(() => {});
+    throw new Error(msg);
   }
 
   const rows = Array.isArray(data) ? data : data ? [data] : [];
   const row = rows[0];
-  if (!row) throw new Error('Ongeldige gebruikersnaam of wachtwoord');
+  if (!row) {
+    logActivity(null, 'failed_login', false, `Gebruiker: ${credentials.username.trim()} — Ongeldige gebruikersnaam of wachtwoord`, ip, userAgent).catch(() => {});
+    throw new Error('Ongeldige gebruikersnaam of wachtwoord');
+  }
 
   const result = mapLoginResponse(row as Record<string, unknown>);
   if (result.status === 'success') {
@@ -192,6 +206,30 @@ export async function logout(userId: string, sessionToken?: string | null): Prom
   await logActivity(userId, 'logout', true);
 }
 
+export async function autoLogout(params: {
+  userId: string;
+  sessionToken?: string | null;
+  reason: string;
+}): Promise<void> {
+  const { userId, sessionToken, reason } = params;
+
+  // Best-effort: invalidate server-side session if we have it.
+  if (sessionToken) {
+    try {
+      const supabase = getSupabase();
+      await supabase.rpc('logout_user_session', {
+        p_user_id: userId,
+        p_session_token: sessionToken,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : undefined;
+  await logActivity(userId, 'auto_logout', true, reason, undefined, userAgent);
+}
+
 export async function getCurrentUser(userId: string): Promise<AppUser | null> {
   const supabase = getSupabase();
   const { data, error } = await supabase.rpc('get_user_by_id', { p_id: userId });
@@ -202,14 +240,22 @@ export async function getCurrentUser(userId: string): Promise<AppUser | null> {
   return mapRowToAppUser(row);
 }
 
-export async function validateSession(userId: string, sessionToken: string): Promise<boolean> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase.rpc('validate_user_session', {
-    p_user_id: userId,
-    p_session_token: sessionToken,
-  });
-  if (error) return false;
-  return data === true;
+export async function validateSession(userId: string, sessionToken: string): Promise<SessionValidationResult> {
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.rpc('validate_user_session', {
+      p_user_id: userId,
+      p_session_token: sessionToken,
+    });
+
+    if (error) {
+      return { status: 'error', errorMessage: error.message || 'validate_user_session error' };
+    }
+
+    return data === true ? { status: 'valid' } : { status: 'invalid' };
+  } catch (e) {
+    return { status: 'error', errorMessage: e instanceof Error ? e.message : 'validate_user_session error' };
+  }
 }
 
 export async function changePassword(userId: string, data: ChangePasswordData): Promise<void> {
@@ -405,7 +451,7 @@ export async function setUserSessionTimeout(
 }
 
 export async function logActivity(
-  userId: string,
+  userId: string | null,
   activityType: ActivityType,
   success: boolean,
   errorMessage?: string,

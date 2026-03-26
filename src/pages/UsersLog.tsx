@@ -1,10 +1,34 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import * as AuthService from '../services/authService';
 import type { ActivityType, UserActivityLogEntry } from '../types/auth';
 import './UsersLog.css';
 
-const ACTIVITY_TYPES: ActivityType[] = ['login', 'logout', 'password_change', 'profile_update'];
+const ACTIVITY_TYPES: ActivityType[] = ['login', 'logout', 'auto_logout', 'failed_login', 'password_change', 'profile_update'];
+const PAGE_SIZE_KEY = 'tb_userslog_page_size';
+const VALID_PAGE_SIZES = [10, 25, 50, 100] as const;
+type PageSize = (typeof VALID_PAGE_SIZES)[number];
+
+function pageNumbers(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | '...')[] = [];
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (current < total - 2) pages.push('...');
+  pages.push(total);
+  return pages;
+}
+
+function readStoredPageSize(): PageSize {
+  try {
+    const v = Number(localStorage.getItem(PAGE_SIZE_KEY));
+    if ((VALID_PAGE_SIZES as readonly number[]).includes(v)) return v as PageSize;
+  } catch {}
+  return 25;
+}
 
 export default function UsersLog() {
   const { isAdmin } = useAuth();
@@ -15,6 +39,13 @@ export default function UsersLog() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [userFilter, setUserFilter] = useState('all');
+  const [pageSize, setPageSize] = useState<PageSize>(readStoredPageSize);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const handlePageSizeChange = useCallback((size: PageSize) => {
+    setPageSize(size);
+    try { localStorage.setItem(PAGE_SIZE_KEY, String(size)); } catch {}
+  }, []);
 
   async function loadLogs() {
     setLoading(true);
@@ -56,12 +87,27 @@ export default function UsersLog() {
     });
   }, [logs, selectedType, userFilter, fromDate, toDate]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedType, fromDate, toDate, userFilter, pageSize]);
+
   const stats = useMemo(() => {
     const total = filteredLogs.length;
     const success = filteredLogs.filter((item) => item.success).length;
     const failed = total - success;
     return { total, success, failed };
   }, [filteredLogs]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pageStart = (safeCurrentPage - 1) * pageSize;
+  const paginatedLogs = filteredLogs.slice(pageStart, pageStart + pageSize);
+
+  useEffect(() => {
+    if (safeCurrentPage !== currentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [safeCurrentPage, currentPage]);
 
   if (!isAdmin()) {
     return (
@@ -122,6 +168,59 @@ export default function UsersLog() {
         <div>Failed: {stats.failed}</div>
       </section>
 
+      <section className="ul-card ul-pagination">
+        <label className="ul-pagination-size">
+          Per pagina
+          <select
+            value={pageSize}
+            onChange={(e) => handlePageSizeChange(Number(e.target.value) as PageSize)}
+          >
+            {VALID_PAGE_SIZES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </label>
+
+        <div className="ul-pagination-nav">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={safeCurrentPage <= 1}
+          >
+            Vorige
+          </button>
+
+          {pageNumbers(safeCurrentPage, totalPages).map((item, i) =>
+            item === '...' ? (
+              <span key={`ellipsis-${i}`} className="ul-pagination-ellipsis">...</span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                className={`ul-pagination-num${item === safeCurrentPage ? ' active' : ''}`}
+                onClick={() => setCurrentPage(item as number)}
+              >
+                {item}
+              </button>
+            )
+          )}
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safeCurrentPage >= totalPages}
+          >
+            Volgende
+          </button>
+        </div>
+
+        <div className="ul-pagination-info">
+          Pagina {safeCurrentPage} van {totalPages}
+        </div>
+      </section>
+
       <section className="ul-card">
         {loading ? (
           <p>Laden...</p>
@@ -140,7 +239,7 @@ export default function UsersLog() {
                 </tr>
               </thead>
               <tbody>
-                {filteredLogs.map((log) => (
+                {paginatedLogs.map((log) => (
                   <tr key={log.id}>
                     <td>{new Date(log.created_at).toLocaleString('nl-NL')}</td>
                     <td>{log.username}</td>

@@ -129,7 +129,7 @@ export interface ResetPasswordData {
   new_password: string;
 }
 
-export type ActivityType = 'login' | 'logout' | 'password_change' | 'profile_update';
+export type ActivityType = 'login' | 'logout' | 'auto_logout' | 'failed_login' | 'password_change' | 'profile_update';
 
 export interface UserActivityLogEntry {
   id: string;

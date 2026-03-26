@@ -1,6 +1,6 @@
 {
   "name": "technisch-beheer",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Technisch Beheer - Werkzaamheden registratie voor KPS",
   "type": "module",
   "scripts": {
