@@ -391,10 +391,13 @@ export default function VehicleDetail() {
                   </div>
                 )}
                 <div className="repair-card-meta">
-                  Melding: {repair.datum_melding ? formatDate(repair.datum_melding) : '-'} • 
-                  Aanpak: {repair.datum_aanpak ? formatDate(repair.datum_aanpak) : '-'} • 
-                  Afgehandeld: {repair.datum_afgehandeld ? formatDate(repair.datum_afgehandeld) : '-'} • 
-                  Toegevoegd door: {repair.created_by?.display_name ?? '-'}
+                  <span>Melding: {repair.datum_melding ? formatDate(repair.datum_melding) : '-'}</span>
+                  <span className="meta-separator"> • </span>
+                  <span>Aanpak: {repair.datum_aanpak ? formatDate(repair.datum_aanpak) : '-'}</span>
+                  <span className="meta-separator"> • </span>
+                  <span>Afgehandeld: {repair.datum_afgehandeld ? formatDate(repair.datum_afgehandeld) : '-'}</span>
+                  <span className="meta-separator"> • </span>
+                  <span>Toegevoegd door: {repair.created_by?.display_name ?? '-'}</span>
                 </div>
                 {repair.melding && (
                   <p className="repair-melding">{repair.melding}</p>

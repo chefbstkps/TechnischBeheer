@@ -173,7 +173,8 @@
 .repair-card-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
   margin-bottom: 0.5rem;
 }
 
@@ -269,4 +270,66 @@
 .parts-table th {
   background: var(--bg-primary);
   font-weight: 600;
+}
+
+/* ───── Responsive: kleine schermen ───── */
+@media (max-width: 640px) {
+  .vehicle-detail-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .vehicle-detail-info,
+  .vehicle-detail-costs,
+  .vehicle-detail-repairs {
+    padding: 1rem;
+  }
+
+  /* Reparatie-formulier: single column */
+  .repair-form-new {
+    grid-template-columns: 1fr;
+  }
+
+  /* Card header: laat items wrappen, kosten op eigen regel */
+  .repair-card-header {
+    gap: 0.4rem 0.5rem;
+  }
+
+  .repair-cost {
+    flex-basis: 100%;
+    margin-left: 0;
+    margin-top: 0.25rem;
+  }
+
+  /* Meta-info: vervang inline bullets door blokweergave */
+  .repair-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    line-height: 1.5;
+  }
+
+  .repair-card-meta .meta-separator {
+    display: none;
+  }
+
+  /* Part-formulier: stack inputs verticaal */
+  .part-form-inline {
+    flex-direction: column;
+  }
+
+  .part-form-inline select,
+  .part-form-inline input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Onderdelen-tabel: horizontaal scrollbaar */
+  .repair-parts {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .parts-table {
+    min-width: 460px;
+  }
 }

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Home,
   LayoutDashboard,
   Building2,
   Tag,
@@ -55,10 +54,10 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-inner">
         <Link to="/" className="navbar-home" aria-label="Home">
-          <Home size={24} />
+          <img src="/tb-w.svg" alt="Home" className="navbar-home-logo" />
         </Link>
         <div className="navbar-links">
-          <Link to="/" className="navbar-link">
+          <Link to="/" className="navbar-link navbar-link-dashboard">
             <LayoutDashboard size={20} />
             Dashboard
           </Link>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Check, KeyRound, Trash2, X } from 'lucide-react';
+import { Check, Eye, EyeOff, KeyRound, Trash2, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import * as AuthService from '../services/authService';
 import { OrganisationService } from '../services/organisationService';
@@ -109,6 +109,7 @@ export default function UserManagement() {
   const [passwordResetValue, setPasswordResetValue] = useState('');
   const [resetTargetId, setResetTargetId] = useState<string | null>(null);
   const [resetBusy, setResetBusy] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   async function loadUsers() {
     setLoading(true);
@@ -696,12 +697,23 @@ export default function UserManagement() {
 
                       {resetTargetId === user.id ? (
                         <div className="um-reset-box" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="password"
-                            placeholder="Nieuw wachtwoord (min. 8)"
-                            value={passwordResetValue}
-                            onChange={(e) => setPasswordResetValue(e.target.value)}
-                          />
+                          <div className="um-reset-password-wrap">
+                            <input
+                              type={showResetPassword ? 'text' : 'password'}
+                              placeholder="Nieuw wachtwoord (min. 8)"
+                              value={passwordResetValue}
+                              onChange={(e) => setPasswordResetValue(e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="um-reset-toggle-pwd"
+                              onClick={() => setShowResetPassword((v) => !v)}
+                              aria-label={showResetPassword ? 'Wachtwoord verbergen' : 'Wachtwoord tonen'}
+                              tabIndex={-1}
+                            >
+                              {showResetPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
                           <span className="um-reset-hint">
                             Standaard resetwachtwoord: <strong>{getDefaultResetPassword(user.username)}</strong>
                           </span>
@@ -719,6 +731,7 @@ export default function UserManagement() {
                             onClick={() => {
                               setResetTargetId(null);
                               setPasswordResetValue('');
+                              setShowResetPassword(false);
                             }}
                           >
                             Annuleren

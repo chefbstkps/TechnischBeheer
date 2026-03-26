@@ -230,13 +230,37 @@
   margin-top: 0.5rem;
 }
 
-.um-reset-box input {
+.um-reset-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
   min-width: 220px;
-  padding: 0.45rem 0.6rem;
+}
+
+.um-reset-password-wrap input {
+  width: 100%;
+  padding: 0.45rem 2.2rem 0.45rem 0.6rem;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-primary);
+}
+
+.um-reset-toggle-pwd {
+  position: absolute;
+  right: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.um-reset-toggle-pwd:hover {
+  color: var(--text-secondary);
 }
 
 .um-reset-hint {

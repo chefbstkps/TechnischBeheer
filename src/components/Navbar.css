@@ -20,16 +20,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent, #38bdf8);
   text-decoration: none;
   padding: 0.35rem;
   border-radius: 8px;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.navbar-home-logo {
+  height: 28px;
+  width: auto;
 }
 
 .navbar-home:hover {
   background: rgba(56, 189, 248, 0.15);
-  color: var(--accent-hover, #7dd3fc);
+  opacity: 0.85;
 }
 
 .navbar-links {
@@ -182,8 +186,12 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Schermen < 1024px: alleen iconen, geen tekst */
+/* Schermen < 1024px: alleen iconen, geen tekst; dashboard verbergen */
 @media (max-width: 1023px) {
+  .navbar-link-dashboard {
+    display: none;
+  }
+
   .navbar-link,
   .navbar-user-menu-btn {
     font-size: 0;
