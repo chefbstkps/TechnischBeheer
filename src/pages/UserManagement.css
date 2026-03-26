@@ -25,6 +25,14 @@
   margin: 0 0 0.75rem;
 }
 
+.um-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
 .um-grid,
 .um-edit-grid {
   display: grid;
@@ -52,9 +60,34 @@
   color: var(--text-primary);
 }
 
+.um-grid input:disabled,
+.um-grid select:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
 .um-actions {
   display: flex;
   align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.um-field-hint {
+  min-height: 1rem;
+  font-size: 0.75rem;
+}
+
+.um-field-hint-muted {
+  color: var(--text-muted);
+}
+
+.um-field-hint-error {
+  color: var(--error);
+}
+
+.um-field-hint-success {
+  color: var(--success);
 }
 
 .um-error,
@@ -73,6 +106,20 @@
   border: 1px solid var(--success);
   background: rgba(52, 211, 153, 0.15);
   color: var(--success);
+}
+
+.um-pending-alert {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--warning);
+  background: rgba(251, 191, 36, 0.12);
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.um-empty {
+  margin: 0;
+  color: var(--text-muted);
 }
 
 .um-table-wrap {
@@ -97,6 +144,15 @@
   color: var(--text-secondary);
   font-size: 0.85rem;
   font-weight: 600;
+  background: var(--bg-secondary);
+}
+
+.um-row-clickable {
+  cursor: pointer;
+}
+
+.um-row-clickable:hover {
+  background: rgba(56, 189, 248, 0.08);
 }
 
 .um-row-actions {
@@ -104,6 +160,61 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-bottom: 0.5rem;
+}
+
+.um-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.um-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.um-icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.um-icon-btn-edit:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.um-icon-btn-save:hover {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.um-icon-btn-delete:hover {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.um-icon-btn-reset:hover {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.um-icon-btn-approve:hover {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.um-icon-btn-reject:hover {
+  color: var(--error);
+  border-color: var(--error);
 }
 
 .um-checkbox {
@@ -126,4 +237,10 @@
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-primary);
+}
+
+.um-reset-hint {
+  width: 100%;
+  color: var(--text-muted);
+  font-size: 0.75rem;
 }

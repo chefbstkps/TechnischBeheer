@@ -9,23 +9,43 @@ export default function PartsManagement() {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newBeschrijving, setNewBeschrijving] = useState('');
+  const [newPrijs, setNewPrijs] = useState('');
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [editName, setEditName] = useState('');
   const [editBeschrijving, setEditBeschrijving] = useState('');
+  const [editPrijs, setEditPrijs] = useState('');
 
   const { data: parts = [], isLoading } = useQuery({
     queryKey: ['parts'],
     queryFn: () => PartsService.list(),
   });
 
+  function parseOptionalPrice(value: string): number | null {
+    const trimmed = value.trim().replace(',', '.');
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function formatPrice(price?: number | null): string {
+    if (price == null) return '-';
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
+  }
+
   const createMutation = useMutation({
-    mutationFn: ({ name, beschrijving }: { name: string; beschrijving?: string | null }) =>
-      PartsService.create(name, beschrijving ?? null),
+    mutationFn: ({ name, beschrijving, prijs }: { name: string; beschrijving?: string | null; prijs?: number | null }) =>
+      PartsService.create(name, beschrijving ?? null, prijs ?? null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       setAdding(false);
       setNewName('');
       setNewBeschrijving('');
+      setNewPrijs('');
     },
   });
 
@@ -34,11 +54,13 @@ export default function PartsManagement() {
       id,
       name,
       beschrijving,
+      prijs,
     }: {
       id: string;
       name: string;
       beschrijving?: string | null;
-    }) => PartsService.update(id, name, beschrijving ?? null),
+      prijs?: number | null;
+    }) => PartsService.update(id, name, beschrijving ?? null, prijs ?? null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       setEditingPart(null);
@@ -56,6 +78,7 @@ export default function PartsManagement() {
     setEditingPart(p);
     setEditName(p.name);
     setEditBeschrijving(p.beschrijving ?? '');
+    setEditPrijs(p.prijs != null ? String(p.prijs) : '');
   };
 
   const cancelEdit = () => {
@@ -68,7 +91,7 @@ export default function PartsManagement() {
         <div>
           <h1>Onderdelenbeheer</h1>
           <p className="parts-management-desc">
-            Auto-onderdelen toevoegen met optionele beschrijving (bijv. Stuurbal, Links).
+            Auto-onderdelen toevoegen met optionele beschrijving en prijs.
           </p>
         </div>
         {!adding && (
@@ -96,6 +119,14 @@ export default function PartsManagement() {
               value={newBeschrijving}
               onChange={(e) => setNewBeschrijving(e.target.value)}
             />
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Prijs (optioneel)"
+              value={newPrijs}
+              onChange={(e) => setNewPrijs(e.target.value)}
+            />
             <div className="parts-management-edit-actions">
               <button
                 type="button"
@@ -104,6 +135,7 @@ export default function PartsManagement() {
                   createMutation.mutate({
                     name: newName.trim(),
                     beschrijving: newBeschrijving.trim() || null,
+                    prijs: parseOptionalPrice(newPrijs),
                   })
                 }
                 disabled={!newName.trim()}
@@ -117,6 +149,7 @@ export default function PartsManagement() {
                   setAdding(false);
                   setNewName('');
                   setNewBeschrijving('');
+                  setNewPrijs('');
                 }}
               >
                 Annuleren
@@ -130,7 +163,14 @@ export default function PartsManagement() {
         {isLoading ? (
           <p className="parts-management-loading">Laden...</p>
         ) : (
-          <ul className="parts-management-list">
+          <>
+            <div className="parts-management-columns">
+              <span>Naam</span>
+              <span>Beschrijving</span>
+              <span>Prijs</span>
+              <span className="parts-management-columns-actions">Acties</span>
+            </div>
+            <ul className="parts-management-list">
             {parts.map((p) => (
               <li key={p.id} className="parts-management-item">
                 {editingPart?.id === p.id ? (
@@ -146,6 +186,14 @@ export default function PartsManagement() {
                       value={editBeschrijving}
                       onChange={(e) => setEditBeschrijving(e.target.value)}
                     />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Prijs (optioneel)"
+                      value={editPrijs}
+                      onChange={(e) => setEditPrijs(e.target.value)}
+                    />
                     <div className="parts-management-edit-actions">
                       <button
                         type="button"
@@ -154,6 +202,7 @@ export default function PartsManagement() {
                             id: p.id,
                             name: editName.trim(),
                             beschrijving: editBeschrijving.trim() || null,
+                            prijs: parseOptionalPrice(editPrijs),
                           })
                         }
                         disabled={!editName.trim()}
@@ -169,9 +218,16 @@ export default function PartsManagement() {
                   <>
                     <div className="parts-management-label">
                       <span className="parts-management-name">{p.name}</span>
-                      {p.beschrijving && (
+                    </div>
+                    <div className="parts-management-cell">
+                      {p.beschrijving ? (
                         <span className="parts-management-desc">{p.beschrijving}</span>
+                      ) : (
+                        <span className="parts-management-muted">-</span>
                       )}
+                    </div>
+                    <div className="parts-management-cell">
+                      <span className="parts-management-price">{formatPrice(p.prijs)}</span>
                     </div>
                     <div className="parts-management-actions">
                       <button
@@ -197,7 +253,8 @@ export default function PartsManagement() {
                 )}
               </li>
             ))}
-          </ul>
+            </ul>
+          </>
         )}
       </div>
     </div>

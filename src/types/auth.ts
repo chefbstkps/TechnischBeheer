@@ -1,10 +1,14 @@
 // Page keys for this app (must match user_page_visibility.page_key in DB)
 export const USER_PAGE_KEYS = [
   'dashboard',
+  'profile',
   'organisatie',
   'brands',
   'automontage',
   'werkzaamheden',
+  'reparaties',
+  'medewerkers',
+  'activity_log',
   'onderdelen',
   'user_management',
   'users_log',
@@ -37,6 +41,8 @@ export interface AppUser {
   organisatie?: string;
   structuur?: string;
   afdeling?: string;
+  is_medewerker?: boolean;
+  allow_multiple_sessions?: boolean;
   page_visibility?: UserPageVisibility;
 }
 
@@ -44,6 +50,28 @@ export interface LoginCredentials {
   username: string;
   password: string;
 }
+
+export interface LoginOptions {
+  forceTakeover?: boolean;
+}
+
+export interface LoginConflict {
+  message: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt?: string | null;
+}
+
+export type LoginResult =
+  | {
+      status: 'success';
+      user: AppUser;
+      sessionToken: string;
+    }
+  | {
+      status: 'conflict';
+      conflict: LoginConflict;
+    };
 
 export interface SignupData {
   username: string;
@@ -70,6 +98,7 @@ export interface CreateUserData {
   organisatie?: string;
   structuur?: string;
   afdeling?: string;
+  is_medewerker?: boolean;
 }
 
 export interface UpdateUserData {
@@ -85,6 +114,8 @@ export interface UpdateUserData {
   organisatie?: string;
   structuur?: string;
   afdeling?: string;
+  is_medewerker?: boolean;
+  allow_multiple_sessions?: boolean;
 }
 
 export interface ChangePasswordData {

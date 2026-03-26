@@ -22,6 +22,7 @@ Deno.serve(async (req) => {
   let password: string;
   let ip: string | null = null;
   let user_agent: string | null = null;
+  let force_takeover = false;
 
   try {
     const body = await req.json();
@@ -29,6 +30,7 @@ Deno.serve(async (req) => {
     password = typeof body?.password === 'string' ? body.password : '';
     if (body?.ip != null) ip = String(body.ip);
     if (body?.user_agent != null) user_agent = String(body.user_agent);
+    force_takeover = body?.force_takeover === true;
   } catch {
     return new Response(JSON.stringify({ error: 'Ongeldige body' }), {
       status: 400,
@@ -54,7 +56,8 @@ Deno.serve(async (req) => {
 
   try {
     const sql = postgres(dbUrl, { prepare: false });
-    const rows = await sql`SELECT * FROM public.login_user(${username}, ${password}, ${ip}, ${user_agent})`;
+    const rows =
+      await sql`SELECT * FROM public.login_user(${username}, ${password}, ${ip}, ${user_agent}, ${force_takeover})`;
     await sql.end();
 
     const row = Array.isArray(rows) ? rows[0] : rows;

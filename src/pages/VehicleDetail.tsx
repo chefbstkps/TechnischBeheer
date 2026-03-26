@@ -17,6 +17,13 @@ function getLocalDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+/** Parseert YYYY-MM-DD als lokale datum zodat er geen UTC-verschuiving ontstaat. */
+function parseLocalDate(value: string): Date | null {
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 /** Formaat onderdeel voor dropdown: naam (beschrijving) als beschrijving beschikbaar is. */
 function formatPartLabel(part: Part): string {
   return part.beschrijving ? `${part.name} (${part.beschrijving})` : part.name;
@@ -65,6 +72,8 @@ export default function VehicleDetail() {
       RepairService.create(id!, newRepairReden, {
         datum_melding: newRepairDatum || null,
         melding: newRepairBeschrijving.trim() || null,
+      }, {
+        source: 'VehicleDetail',
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['repairs', id] });
@@ -146,7 +155,7 @@ export default function VehicleDetail() {
       minimumFractionDigits: 2,
     }).format(n);
   const formatDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString('nl-NL') : '-';
+    d ? parseLocalDate(d)?.toLocaleDateString('nl-NL') ?? '-' : '-';
 
   if (!id) return <div>Geen voertuig geselecteerd</div>;
   if (vehicleLoading || !vehicle)
@@ -154,6 +163,12 @@ export default function VehicleDetail() {
 
   const structure = vehicle.structure as { name?: string } | undefined;
   const department = vehicle.department as { name?: string } | undefined;
+  const insuranceValidUntil = vehicle.eind_datum?.slice(0, 10) ?? null;
+  const insuranceStatus = insuranceValidUntil
+    ? insuranceValidUntil >= getLocalDateString()
+      ? 'Geldig'
+      : 'Ongeldig'
+    : null;
 
   return (
     <div className="vehicle-detail">
@@ -184,7 +199,18 @@ export default function VehicleDetail() {
           <div><strong>Verzekertype</strong> {vehicle.verzekertype ? capitalizeFirst(vehicle.verzekertype) : '-'}</div>
           <div><strong>Verzekering geldig van</strong> {vehicle.start_datum ? formatDate(vehicle.start_datum) : '-'}</div>
           <div><strong>Verzekering geldig tot</strong> {vehicle.eind_datum ? formatDate(vehicle.eind_datum) : '-'}</div>
+          <div>
+            <strong>Verzekeringsstatus</strong>{' '}
+            {insuranceStatus ? (
+              <span className={`insurance-status insurance-status-${insuranceStatus.toLowerCase()}`}>
+                {insuranceStatus}
+              </span>
+            ) : (
+              '-'
+            )}
+          </div>
           <div className="vehicle-detail-grid-full"><strong>Opmerking</strong> {vehicle.opmerking || '-'}</div>
+          <div className="vehicle-detail-grid-full"><strong>Toegevoegd door</strong> {vehicle.created_by?.display_name ?? '-'}</div>
         </div>
       </section>
 
@@ -367,7 +393,8 @@ export default function VehicleDetail() {
                 <div className="repair-card-meta">
                   Melding: {repair.datum_melding ? formatDate(repair.datum_melding) : '-'} • 
                   Aanpak: {repair.datum_aanpak ? formatDate(repair.datum_aanpak) : '-'} • 
-                  Afgehandeld: {repair.datum_afgehandeld ? formatDate(repair.datum_afgehandeld) : '-'}
+                  Afgehandeld: {repair.datum_afgehandeld ? formatDate(repair.datum_afgehandeld) : '-'} • 
+                  Toegevoegd door: {repair.created_by?.display_name ?? '-'}
                 </div>
                 {repair.melding && (
                   <p className="repair-melding">{repair.melding}</p>

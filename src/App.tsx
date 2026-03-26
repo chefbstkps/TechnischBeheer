@@ -12,8 +12,10 @@ import Brands from './pages/Brands';
 import VehicleManagement from './pages/VehicleManagement';
 import VehicleDetail from './pages/VehicleDetail';
 import Werkzaamheden from './pages/Werkzaamheden';
+import Medewerkers from './pages/Medewerkers';
 import Repairs from './pages/Repairs';
 import ActivityDetail from './pages/ActivityDetail';
+import ActivityLog from './pages/ActivityLog';
 import PartsManagement from './pages/PartsManagement';
 import Profile from './pages/Profile';
 import UserManagement from './pages/UserManagement';
@@ -44,9 +46,18 @@ export default function App() {
                 <Route path="/automontage" element={<VehicleManagement />} />
                 <Route path="/automontage/voertuig/:id" element={<VehicleDetail />} />
                 <Route path="/werkzaamheden" element={<Werkzaamheden />} />
+                <Route path="/medewerkers" element={<Medewerkers />} />
                 <Route path="/reparaties" element={<Repairs />} />
                 <Route path="/werkzaamheden/melding/:id" element={<ActivityDetail />} />
                 <Route path="/onderdelen" element={<PartsManagement />} />
+                <Route
+                  path="/activity-log"
+                  element={
+                    <ProtectedRoute requireAdmin>
+                      <ActivityLog />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/user-management"
                   element={

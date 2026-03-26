@@ -7,6 +7,9 @@ import type {
   ChangePasswordData,
   CreateUserData,
   LoginCredentials,
+  LoginConflict,
+  LoginOptions,
+  LoginResult,
   ResetPasswordData,
   SignupData,
   UpdateUserData,
@@ -17,6 +20,7 @@ import type {
 
 const STORAGE_KEYS = {
   user: 'tb_user',
+  sessionToken: 'tb_session_token',
   loggedInAt: 'tb_logged_in_at',
   lastActivityAt: 'tb_last_activity_at',
 };
@@ -43,6 +47,8 @@ function mapRowToAppUser(row: Record<string, unknown>): AppUser {
     organisatie: row.organisatie as string | undefined,
     structuur: row.structuur as string | undefined,
     afdeling: row.afdeling as string | undefined,
+    is_medewerker: row.is_medewerker as boolean | undefined,
+    allow_multiple_sessions: row.allow_multiple_sessions as boolean | undefined,
   };
 }
 
@@ -57,8 +63,9 @@ export const authStorageKeys = STORAGE_KEYS;
 async function loginViaEdgeFunction(
   credentials: LoginCredentials,
   ip: string | undefined,
-  userAgent: string | undefined
-): Promise<AppUser> {
+  userAgent: string | undefined,
+  options: LoginOptions = {}
+): Promise<LoginResult> {
   const url = `${SUPABASE_URL}/functions/v1/auth-login`;
   const res = await fetch(url, {
     method: 'POST',
@@ -71,6 +78,7 @@ async function loginViaEdgeFunction(
       password: credentials.password,
       ip: ip ?? null,
       user_agent: userAgent ?? null,
+      force_takeover: options.forceTakeover ?? false,
     }),
   });
   const text = await res.text();
@@ -86,10 +94,48 @@ async function loginViaEdgeFunction(
   }
   const row = JSON.parse(text) as Record<string, unknown>;
   if (!row?.id) throw new Error('Ongeldige gebruikersnaam of wachtwoord');
-  return mapRowToAppUser(row);
+  return mapLoginResponse(row);
 }
 
-export async function login(credentials: LoginCredentials): Promise<AppUser> {
+function buildLoginConflict(row: Record<string, unknown>): LoginConflict {
+  const createdAt = (row.conflict_created_at as string | null | undefined) ?? null;
+  const userAgent = (row.conflict_user_agent as string | null | undefined) ?? null;
+  const ipAddress = (row.conflict_ip as string | null | undefined) ?? null;
+
+  return {
+    message:
+      (row.conflict_message as string | undefined) ??
+      'Deze gebruiker is al ingelogd op een ander apparaat.',
+    createdAt,
+    userAgent,
+    ipAddress,
+  };
+}
+
+function mapLoginResponse(row: Record<string, unknown>): LoginResult {
+  if (row.login_conflict === true) {
+    return {
+      status: 'conflict',
+      conflict: buildLoginConflict(row),
+    };
+  }
+
+  const sessionToken = row.session_token;
+  if (typeof sessionToken !== 'string' || !sessionToken) {
+    throw new Error('Sessie starten mislukt');
+  }
+
+  return {
+    status: 'success',
+    user: mapRowToAppUser(row),
+    sessionToken,
+  };
+}
+
+export async function login(
+  credentials: LoginCredentials,
+  options: LoginOptions = {}
+): Promise<LoginResult> {
   let ip: string | undefined;
   try {
     const res = await fetch('https://api.ipify.org?format=json');
@@ -106,6 +152,7 @@ export async function login(credentials: LoginCredentials): Promise<AppUser> {
     p_password: credentials.password,
     p_ip: ip ?? null,
     p_user_agent: userAgent ?? null,
+    p_force_takeover: options.forceTakeover ?? false,
   });
 
   if (error) {
@@ -114,9 +161,11 @@ export async function login(credentials: LoginCredentials): Promise<AppUser> {
       (error as { status?: number }).status === 404 ||
       String((error as { message?: string }).message || '').includes('404');
     if (is404) {
-      const user = await loginViaEdgeFunction(credentials, ip, userAgent);
-      await logActivity(user.id, 'login', true, undefined, ip, userAgent);
-      return user;
+      const result = await loginViaEdgeFunction(credentials, ip, userAgent, options);
+      if (result.status === 'success') {
+        await logActivity(result.user.id, 'login', true, undefined, ip, userAgent);
+      }
+      return result;
     }
     throw new Error(error.message || 'Login mislukt');
   }
@@ -125,12 +174,21 @@ export async function login(credentials: LoginCredentials): Promise<AppUser> {
   const row = rows[0];
   if (!row) throw new Error('Ongeldige gebruikersnaam of wachtwoord');
 
-  const user = mapRowToAppUser(row);
-  await logActivity(user.id, 'login', true, undefined, ip, userAgent);
-  return user;
+  const result = mapLoginResponse(row as Record<string, unknown>);
+  if (result.status === 'success') {
+    await logActivity(result.user.id, 'login', true, undefined, ip, userAgent);
+  }
+  return result;
 }
 
-export async function logout(userId: string): Promise<void> {
+export async function logout(userId: string, sessionToken?: string | null): Promise<void> {
+  if (sessionToken) {
+    const supabase = getSupabase();
+    await supabase.rpc('logout_user_session', {
+      p_user_id: userId,
+      p_session_token: sessionToken,
+    });
+  }
   await logActivity(userId, 'logout', true);
 }
 
@@ -142,6 +200,16 @@ export async function getCurrentUser(userId: string): Promise<AppUser | null> {
   const row = rows[0];
   if (!row) return null;
   return mapRowToAppUser(row);
+}
+
+export async function validateSession(userId: string, sessionToken: string): Promise<boolean> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc('validate_user_session', {
+    p_user_id: userId,
+    p_session_token: sessionToken,
+  });
+  if (error) return false;
+  return data === true;
 }
 
 export async function changePassword(userId: string, data: ChangePasswordData): Promise<void> {
@@ -174,6 +242,51 @@ export async function signup(data: SignupData): Promise<void> {
   if (error) throw new Error(error.message || 'Registratie mislukt');
 }
 
+export async function checkSignupAvailability(params: {
+  username?: string;
+  email?: string;
+}): Promise<{ usernameExists: boolean; emailExists: boolean }> {
+  const username = params.username?.trim() || null;
+  const email = params.email?.trim() || null;
+
+  if (!username && !email) {
+    return { usernameExists: false, emailExists: false };
+  }
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc('check_signup_availability', {
+    p_username: username,
+    p_email: email,
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Beschikbaarheid controleren mislukt');
+  }
+
+  const rows = Array.isArray(data) ? data : data ? [data] : [];
+  const row = rows[0] as
+    | {
+        username_exists?: boolean | null;
+        email_exists?: boolean | null;
+      }
+    | undefined;
+
+  return {
+    usernameExists: Boolean(row?.username_exists),
+    emailExists: Boolean(row?.email_exists),
+  };
+}
+
+export async function isUsernameAvailable(username: string): Promise<boolean> {
+  const { usernameExists } = await checkSignupAvailability({ username });
+  return !usernameExists;
+}
+
+export async function isEmailAvailable(email: string): Promise<boolean> {
+  const { emailExists } = await checkSignupAvailability({ email });
+  return !emailExists;
+}
+
 export async function getAllUsers(): Promise<AppUser[]> {
   const supabase = getSupabase();
   const { data, error } = await supabase.rpc('get_all_users');
@@ -196,6 +309,7 @@ export async function createUser(userData: CreateUserData): Promise<AppUser> {
     p_organisatie: cleanText(userData.organisatie),
     p_structuur: cleanText(userData.structuur),
     p_afdeling: cleanText(userData.afdeling),
+    p_is_medewerker: userData.is_medewerker ?? false,
   });
 
   if (error) throw new Error(error.message || 'Gebruiker aanmaken mislukt');
@@ -221,6 +335,8 @@ export async function updateUser(userId: string, userData: UpdateUserData): Prom
     p_organisatie: cleanText(userData.organisatie),
     p_structuur: cleanText(userData.structuur),
     p_afdeling: cleanText(userData.afdeling),
+    p_is_medewerker: userData.is_medewerker ?? null,
+    p_allow_multiple_sessions: userData.allow_multiple_sessions ?? null,
   });
 
   if (error) throw new Error(error.message || 'Gebruiker bijwerken mislukt');

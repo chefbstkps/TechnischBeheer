@@ -7,6 +7,7 @@ import {
   parseAndValidateVehicleCsv,
   type CsvParseResult,
 } from '../services/vehicleService';
+import { useAuth } from '../contexts/AuthContext';
 import { RepairService } from '../services/repairService';
 import { OrganisationService } from '../services/organisationService';
 import { BrandsService } from '../services/brandsService';
@@ -74,6 +75,7 @@ PA-12-34,Burgerplaat,Toyota,Hilux,2020,BvB,Transport,Pickup,Goed
 export default function VehicleManagement() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { isSuperUserOrAdmin } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [columns, setColumns] = useState<ColumnConfig[]>(getInitialColumns);
   const [showForm, setShowForm] = useState(false);
@@ -263,6 +265,7 @@ export default function VehicleManagement() {
   };
 
   const handleOpenImportModal = () => {
+    if (!isSuperUserOrAdmin()) return;
     setImportModalOpen(true);
     setImportError(null);
     setImportSuccess(null);
@@ -363,13 +366,15 @@ export default function VehicleManagement() {
       <div className="vehicle-management-header">
         <h1>Voertuigbeheer</h1>
         <div className="vehicle-management-actions">
-          <button
-            type="button"
-            className="btn-import"
-            onClick={handleOpenImportModal}
-          >
-            Import CSV
-          </button>
+          {isSuperUserOrAdmin() && (
+            <button
+              type="button"
+              className="btn-import"
+              onClick={handleOpenImportModal}
+            >
+              Import CSV
+            </button>
+          )}
           <button onClick={openCreateForm} className="btn-primary">
             Nieuw voertuig
           </button>

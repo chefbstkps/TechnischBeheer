@@ -51,6 +51,27 @@
   grid-column: 1 / -1;
 }
 
+.insurance-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.insurance-status-geldig {
+  color: var(--success);
+  background: rgba(52, 211, 153, 0.14);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.insurance-status-ongeldig {
+  color: var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
 .vehicle-detail-total {
   font-size: 1.5rem;
   font-weight: 700;

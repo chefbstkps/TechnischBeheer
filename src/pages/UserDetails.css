@@ -51,10 +51,82 @@
   color: var(--text-primary);
 }
 
-.ud-checkbox {
+.ud-switch-field {
+  display: flex !important;
   flex-direction: row !important;
   align-items: center;
-  gap: 0.5rem !important;
+  justify-content: space-between;
+  gap: 0.75rem !important;
+  padding: 0.15rem 0;
+}
+
+.ud-switch-control {
+  position: relative;
+  display: inline-flex;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.ud-switch-control input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.ud-switch-slider {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.28);
+  border: 1px solid var(--border-color);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ud-switch-slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+
+.ud-switch-control input:checked + .ud-switch-slider {
+  background: rgba(56, 189, 248, 0.32);
+  border-color: var(--accent);
+}
+
+.ud-switch-control input:checked + .ud-switch-slider::after {
+  transform: translateX(20px);
+}
+
+.ud-switch-control input:focus-visible + .ud-switch-slider {
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.ud-switch-control input:disabled {
+  cursor: not-allowed;
+}
+
+.ud-switch-control input:disabled + .ud-switch-slider {
+  opacity: 0.7;
+}
+
+.ud-helper-text {
+  margin: 0.75rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
 .ud-actions {
@@ -71,9 +143,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.55rem 0.7rem;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
 }
 
 .ud-timeout-row {

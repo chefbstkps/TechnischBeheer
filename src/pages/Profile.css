@@ -8,6 +8,16 @@
   color: var(--text-primary);
 }
 
+.profile-warning {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid var(--warning);
+  border-radius: 10px;
+  color: var(--warning);
+  font-weight: 600;
+}
+
 .profile-tabs {
   display: flex;
   gap: 0.25rem;
@@ -33,6 +43,11 @@
   background: rgba(56, 189, 248, 0.15);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.profile-tab:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .profile-card {

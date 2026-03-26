@@ -26,5 +26,9 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Prote
     return <Navigate to="/" replace />;
   }
 
+  if (user.must_change_password && location.pathname !== '/profile') {
+    return <Navigate to="/profile" replace />;
+  }
+
   return <>{children}</>;
 }

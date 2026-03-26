@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import * as AuthService from '../services/authService';
+import { OrganisationService } from '../services/organisationService';
 import {
   USER_PAGE_KEYS,
   type AppUser,
@@ -10,6 +12,7 @@ import {
   type UpdateUserData,
   type UserPageVisibility,
 } from '../types/auth';
+import { getRankOptions } from '../utils/ranks';
 import './UserDetails.css';
 
 interface ProfileFormState {
@@ -18,9 +21,13 @@ interface ProfileFormState {
   email: string;
   role: AppUser['role'];
   is_active: boolean;
+  is_medewerker: boolean;
+  allow_multiple_sessions: boolean;
   telefoonnummer: string;
   rang: string;
   organisatie: string;
+  structure_id: string;
+  department_id: string;
   structuur: string;
   afdeling: string;
 }
@@ -37,6 +44,19 @@ export default function UserDetails() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const { data: ranks = [] } = useQuery({
+    queryKey: ['ranks'],
+    queryFn: () => OrganisationService.listRanks(),
+  });
+  const { data: structures = [] } = useQuery({
+    queryKey: ['structures'],
+    queryFn: () => OrganisationService.listStructures(),
+  });
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', profileForm?.structure_id ?? ''],
+    queryFn: () => OrganisationService.listDepartments(profileForm?.structure_id ?? ''),
+    enabled: !!profileForm?.structure_id,
+  });
 
   async function loadData(userId: string) {
     setLoading(true);
@@ -59,9 +79,13 @@ export default function UserDetails() {
         email: currentUser.email,
         role: currentUser.role,
         is_active: currentUser.is_active,
+        is_medewerker: currentUser.is_medewerker ?? false,
+        allow_multiple_sessions: currentUser.allow_multiple_sessions ?? false,
         telefoonnummer: currentUser.telefoonnummer ?? '',
         rang: currentUser.rang ?? '',
         organisatie: currentUser.organisatie ?? '',
+        structure_id: '',
+        department_id: '',
         structuur: currentUser.structuur ?? '',
         afdeling: currentUser.afdeling ?? '',
       });
@@ -82,6 +106,51 @@ export default function UserDetails() {
     }
     void loadData(id);
   }, [id]);
+
+  const selectedStructure = useMemo(
+    () =>
+      profileForm
+        ? structures.find((structure) => structure.id === profileForm.structure_id) ?? null
+        : null,
+    [profileForm, structures]
+  );
+  const selectedDepartment = useMemo(
+    () =>
+      profileForm
+        ? departments.find((department) => department.id === profileForm.department_id) ?? null
+        : null,
+    [departments, profileForm]
+  );
+
+  useEffect(() => {
+    if (!profileForm || profileForm.structure_id || !profileForm.structuur || structures.length === 0) return;
+    const matchingStructure = structures.find((structure) => structure.name === profileForm.structuur);
+    if (!matchingStructure) return;
+    setProfileForm((prev) =>
+      prev
+        ? {
+            ...prev,
+            structure_id: matchingStructure.id,
+          }
+        : prev
+    );
+  }, [profileForm, structures]);
+
+  useEffect(() => {
+    if (!profileForm || !profileForm.structure_id || profileForm.department_id || !profileForm.afdeling || departments.length === 0) {
+      return;
+    }
+    const matchingDepartment = departments.find((department) => department.name === profileForm.afdeling);
+    if (!matchingDepartment) return;
+    setProfileForm((prev) =>
+      prev
+        ? {
+            ...prev,
+            department_id: matchingDepartment.id,
+          }
+        : prev
+    );
+  }, [departments, profileForm]);
 
   if (!isAdmin()) {
     return (
@@ -114,6 +183,35 @@ export default function UserDetails() {
   const userId = id;
   const form = profileForm;
   const pageVisibility = visibility;
+  const rankOptions = getRankOptions(ranks, form.rang);
+
+  function updateStructureId(structureId: string) {
+    const nextStructure = structures.find((structure) => structure.id === structureId);
+    setProfileForm((prev) =>
+      prev
+        ? {
+            ...prev,
+            structure_id: structureId,
+            department_id: '',
+            structuur: nextStructure?.name ?? '',
+            afdeling: '',
+          }
+        : prev
+    );
+  }
+
+  function updateDepartmentId(departmentId: string) {
+    const nextDepartment = departments.find((department) => department.id === departmentId);
+    setProfileForm((prev) =>
+      prev
+        ? {
+            ...prev,
+            department_id: departmentId,
+            afdeling: nextDepartment?.name ?? '',
+          }
+        : prev
+    );
+  }
 
   async function saveProfile() {
     setSaving(true);
@@ -126,11 +224,13 @@ export default function UserDetails() {
         email: form.email,
         role: form.role,
         is_active: form.is_active,
+        is_medewerker: form.is_medewerker,
+        allow_multiple_sessions: form.allow_multiple_sessions,
         telefoonnummer: form.telefoonnummer,
         rang: form.rang,
         organisatie: form.organisatie,
-        structuur: form.structuur,
-        afdeling: form.afdeling,
+        structuur: selectedStructure?.name ?? form.structuur,
+        afdeling: selectedDepartment?.name ?? form.afdeling,
       };
       await AuthService.updateUser(userId, payload);
       await AuthService.logActivity(userId, 'profile_update', true);
@@ -218,13 +318,27 @@ export default function UserDetails() {
               <option value="admin">admin</option>
             </select>
           </label>
-          <label className="ud-checkbox">
-            <input
-              type="checkbox"
-              checked={form.is_active}
-              onChange={(e) => setProfileForm((prev) => (prev ? { ...prev, is_active: e.target.checked } : prev))}
-            />
-            Actief
+          <label className="ud-switch-field">
+            <span>Actief</span>
+            <span className="ud-switch-control">
+              <input
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => setProfileForm((prev) => (prev ? { ...prev, is_active: e.target.checked } : prev))}
+              />
+              <span className="ud-switch-slider" aria-hidden="true" />
+            </span>
+          </label>
+          <label className="ud-switch-field">
+            <span>Medewerker</span>
+            <span className="ud-switch-control">
+              <input
+                type="checkbox"
+                checked={form.is_medewerker}
+                onChange={(e) => setProfileForm((prev) => (prev ? { ...prev, is_medewerker: e.target.checked } : prev))}
+              />
+              <span className="ud-switch-slider" aria-hidden="true" />
+            </span>
           </label>
           <label>
             Telefoonnummer
@@ -235,10 +349,17 @@ export default function UserDetails() {
           </label>
           <label>
             Rang
-            <input
+            <select
               value={form.rang}
               onChange={(e) => setProfileForm((prev) => (prev ? { ...prev, rang: e.target.value } : prev))}
-            />
+            >
+              <option value="">Selecteer rang</option>
+              {rankOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Organisatie
@@ -249,17 +370,29 @@ export default function UserDetails() {
           </label>
           <label>
             Structuur
-            <input
-              value={form.structuur}
-              onChange={(e) => setProfileForm((prev) => (prev ? { ...prev, structuur: e.target.value } : prev))}
-            />
+            <select value={form.structure_id} onChange={(e) => updateStructureId(e.target.value)}>
+              <option value="">Selecteer structuur</option>
+              {structures.map((structure) => (
+                <option key={structure.id} value={structure.id}>
+                  {structure.name}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Afdeling
-            <input
-              value={form.afdeling}
-              onChange={(e) => setProfileForm((prev) => (prev ? { ...prev, afdeling: e.target.value } : prev))}
-            />
+            <select
+              value={form.department_id}
+              onChange={(e) => updateDepartmentId(e.target.value)}
+              disabled={!form.structure_id}
+            >
+              <option value="">{form.structure_id ? 'Selecteer afdeling' : 'Kies eerst een structuur'}</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <div className="ud-actions">
@@ -275,11 +408,14 @@ export default function UserDetails() {
           {USER_PAGE_KEYS.map((pageKey) => (
             <label key={pageKey} className="ud-visibility-item">
               <span>{pageKey}</span>
-              <input
-                type="checkbox"
-                checked={pageVisibility[pageKey] !== false}
-                onChange={(e) => void toggleVisibility(pageKey, e.target.checked)}
-              />
+              <span className="ud-switch-control">
+                <input
+                  type="checkbox"
+                  checked={pageVisibility[pageKey] !== false}
+                  onChange={(e) => void toggleVisibility(pageKey, e.target.checked)}
+                />
+                <span className="ud-switch-slider" aria-hidden="true" />
+              </span>
             </label>
           ))}
         </div>
@@ -314,6 +450,31 @@ export default function UserDetails() {
             {saving ? 'Opslaan...' : 'Sessie-timeout opslaan'}
           </button>
         </div>
+      </section>
+
+      <section className="ud-card">
+        <h2>Apparaatbeheer</h2>
+        <label className="ud-switch-field">
+          <span>Meerdere apparaten toestaan</span>
+          <span className="ud-switch-control">
+            <input
+              type="checkbox"
+              checked={form.role === 'admin' ? true : form.allow_multiple_sessions}
+              disabled={form.role === 'admin'}
+              onChange={(e) =>
+                setProfileForm((prev) =>
+                  prev ? { ...prev, allow_multiple_sessions: e.target.checked } : prev
+                )
+              }
+            />
+            <span className="ud-switch-slider" aria-hidden="true" />
+          </span>
+        </label>
+        <p className="ud-helper-text">
+          {form.role === 'admin'
+            ? 'Admins kunnen altijd op meerdere apparaten tegelijk ingelogd zijn.'
+            : 'Wanneer dit aan staat, kan deze gebruiker op meerdere apparaten tegelijk ingelogd blijven.'}
+        </p>
       </section>
     </div>
   );

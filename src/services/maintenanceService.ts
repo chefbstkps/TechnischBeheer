@@ -1,4 +1,6 @@
 import { getSupabase } from '../lib/supabase';
+import { ActivityLogService } from './activityLogService';
+import { buildFieldChanges } from '../utils/activityLog';
 import type {
   MaintenanceWork,
   MaintenanceWorkWithRelations,
@@ -7,6 +9,55 @@ import type {
   MaintenanceAanpakType,
   MaintenanceStatus,
 } from '../types/database';
+
+const AANPAK_DIFF_FIELDS = [
+  { field: 'type', label: 'Aanpak', getValue: (aanpak: MaintenanceAanpak) => aanpak.type },
+  { field: 'datum', label: 'Datum', getValue: (aanpak: MaintenanceAanpak) => aanpak.datum },
+  { field: 'beschrijving', label: 'Beschrijving', getValue: (aanpak: MaintenanceAanpak) => aanpak.beschrijving },
+  { field: 'bedrag', label: 'Bedrag', getValue: (aanpak: MaintenanceAanpak) => aanpak.bedrag },
+];
+
+function getWorkLabel(work: MaintenanceWork | null | undefined): string {
+  if (!work) return 'Onbekende melding';
+  return [work.afdeling, work.datum_melding].filter(Boolean).join(' · ');
+}
+
+async function getLatestAanpakByWorkId(workId: string): Promise<MaintenanceAanpak | null> {
+  const { data, error } = await getSupabase()
+    .from('maintenance_aanpak')
+    .select('*')
+    .eq('maintenance_work_id', workId)
+    .order('datum', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function syncMaintenanceWorkStatus(workId: string): Promise<MaintenanceWorkWithRelations | null> {
+  const latestAanpak = await getLatestAanpakByWorkId(workId);
+  if (!latestAanpak) {
+    return MaintenanceService.getById(workId);
+  }
+
+  const newStatus: MaintenanceStatus =
+    latestAanpak.type === 'begroting opmaken' ? 'begrotingsfase' : 'afgehandeld';
+  const updates: Partial<MaintenanceWork> = {
+    status: newStatus,
+    updated_at: new Date().toISOString(),
+    datum_afgehandeld: latestAanpak.type === 'afgehandeld' ? latestAanpak.datum : null,
+    datum_aanpak: latestAanpak.datum,
+  };
+
+  const { error } = await getSupabase()
+    .from('maintenance_work')
+    .update(updates)
+    .eq('id', workId);
+  if (error) throw error;
+
+  return MaintenanceService.getById(workId);
+}
 
 export const MaintenanceService = {
   async list(afdeling?: MaintenanceAfdeling): Promise<MaintenanceWorkWithRelations[]> {
@@ -56,6 +107,19 @@ export const MaintenanceService = {
       .select()
       .single();
     if (error) throw error;
+    await ActivityLogService.log({
+      user_id: null,
+      activity_type: 'maintenance_created',
+      subject_type: 'maintenance_work',
+      subject_id: data.id,
+      subject_label: getWorkLabel(data),
+      amount: null,
+      details: {
+        afdeling: data.afdeling,
+        datum_melding: data.datum_melding,
+        melding: data.melding,
+      },
+    }).catch(() => undefined);
     return data;
   },
 
@@ -88,7 +152,16 @@ export const MaintenanceService = {
       .eq('maintenance_work_id', maintenanceWorkId)
       .order('datum', { ascending: false });
     if (error) throw error;
-    return data ?? [];
+    const aanpakList = data ?? [];
+    const createdByMap = await ActivityLogService.getCreatedByMap(
+      'maintenance_aanpak',
+      'maintenance_plan_created',
+      aanpakList.map((aanpak) => aanpak.id)
+    );
+    return aanpakList.map((aanpak) => ({
+      ...aanpak,
+      created_by: createdByMap[aanpak.id] ?? null,
+    }));
   },
 
   async listAanpakByWorkIds(workIds: string[]): Promise<MaintenanceAanpak[]> {
@@ -99,7 +172,16 @@ export const MaintenanceService = {
       .in('maintenance_work_id', workIds)
       .order('datum', { ascending: false });
     if (error) throw error;
-    return data ?? [];
+    const aanpakList = data ?? [];
+    const createdByMap = await ActivityLogService.getCreatedByMap(
+      'maintenance_aanpak',
+      'maintenance_plan_created',
+      aanpakList.map((aanpak) => aanpak.id)
+    );
+    return aanpakList.map((aanpak) => ({
+      ...aanpak,
+      created_by: createdByMap[aanpak.id] ?? null,
+    }));
   },
 
   async createAanpak(
@@ -109,6 +191,7 @@ export const MaintenanceService = {
     beschrijving: string | null,
     bedrag: number | null
   ): Promise<MaintenanceAanpak> {
+    const beforeWork = await this.getById(maintenanceWorkId);
     const { data: aanpak, error: insertError } = await getSupabase()
       .from('maintenance_aanpak')
       .insert({
@@ -122,20 +205,38 @@ export const MaintenanceService = {
       .single();
     if (insertError) throw insertError;
 
-    const newStatus: MaintenanceStatus =
-      type === 'begroting opmaken' ? 'begrotingsfase' : 'afgehandeld';
-    const updates: Partial<MaintenanceWork> = {
-      status: newStatus,
-      updated_at: new Date().toISOString(),
-    };
-    if (type === 'afgehandeld') {
-      updates.datum_afgehandeld = datum;
+    const afterWork = await syncMaintenanceWorkStatus(maintenanceWorkId);
+    const subjectLabel = getWorkLabel(afterWork ?? beforeWork);
+
+    await ActivityLogService.log({
+      user_id: null,
+      activity_type: 'maintenance_plan_created',
+      subject_type: 'maintenance_aanpak',
+      subject_id: aanpak.id,
+      subject_label: subjectLabel,
+      amount: aanpak.bedrag != null ? Number(aanpak.bedrag) : null,
+      details: {
+        aanpak: aanpak.type,
+        datum: aanpak.datum,
+        beschrijving: aanpak.beschrijving,
+        bedrag: aanpak.bedrag != null ? Number(aanpak.bedrag) : null,
+      },
+    }).catch(() => undefined);
+
+    if (beforeWork?.status !== afterWork?.status) {
+      await ActivityLogService.log({
+        user_id: null,
+        activity_type: 'maintenance_status_changed',
+        subject_type: 'maintenance_work',
+        subject_id: maintenanceWorkId,
+        subject_label: subjectLabel,
+        amount: aanpak.bedrag != null ? Number(aanpak.bedrag) : null,
+        details: {
+          from_status: beforeWork?.status ?? null,
+          to_status: afterWork?.status ?? null,
+        },
+      }).catch(() => undefined);
     }
-    const { error: updateError } = await getSupabase()
-      .from('maintenance_work')
-      .update(updates)
-      .eq('id', maintenanceWorkId);
-    if (updateError) throw updateError;
 
     return aanpak;
   },
@@ -149,6 +250,14 @@ export const MaintenanceService = {
       bedrag: number | null;
     }
   ): Promise<MaintenanceAanpak> {
+    const { data: beforeAanpak, error: beforeError } = await getSupabase()
+      .from('maintenance_aanpak')
+      .select('*')
+      .eq('id', aanpakId)
+      .single();
+    if (beforeError) throw beforeError;
+
+    const beforeWork = await this.getById(beforeAanpak.maintenance_work_id);
     const { data, error } = await getSupabase()
       .from('maintenance_aanpak')
       .update({
@@ -161,6 +270,37 @@ export const MaintenanceService = {
       .select()
       .single();
     if (error) throw error;
+    const afterWork = await syncMaintenanceWorkStatus(data.maintenance_work_id);
+    const changes = buildFieldChanges(beforeAanpak, data, AANPAK_DIFF_FIELDS);
+    const subjectLabel = getWorkLabel(afterWork ?? beforeWork);
+
+    if (changes.length > 0) {
+      await ActivityLogService.log({
+        user_id: null,
+        activity_type: 'maintenance_plan_updated',
+        subject_type: 'maintenance_aanpak',
+        subject_id: aanpakId,
+        subject_label: subjectLabel,
+        amount: data.bedrag != null ? Number(data.bedrag) : null,
+        details: { changes },
+      }).catch(() => undefined);
+    }
+
+    if (beforeWork?.status !== afterWork?.status) {
+      await ActivityLogService.log({
+        user_id: null,
+        activity_type: 'maintenance_status_changed',
+        subject_type: 'maintenance_work',
+        subject_id: data.maintenance_work_id,
+        subject_label: subjectLabel,
+        amount: data.bedrag != null ? Number(data.bedrag) : null,
+        details: {
+          from_status: beforeWork?.status ?? null,
+          to_status: afterWork?.status ?? null,
+        },
+      }).catch(() => undefined);
+    }
+
     return data;
   },
 };

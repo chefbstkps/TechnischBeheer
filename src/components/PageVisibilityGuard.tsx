@@ -4,10 +4,14 @@ import { USER_PAGE_KEYS, type UserPageKey } from '../types/auth';
 
 const PATH_TO_PAGE_KEY: Record<string, UserPageKey> = {
   '/': 'dashboard',
+  '/profile': 'profile',
   '/organisatie': 'organisatie',
   '/brands': 'brands',
   '/automontage': 'automontage',
   '/werkzaamheden': 'werkzaamheden',
+  '/reparaties': 'reparaties',
+  '/medewerkers': 'medewerkers',
+  '/activity-log': 'activity_log',
   '/onderdelen': 'onderdelen',
   '/user-management': 'user_management',
   '/users-log': 'users_log',

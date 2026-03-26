@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -9,6 +9,8 @@ import {
   Wrench,
   ClipboardList,
   Box,
+  Users,
+  History,
   Menu,
   X,
   User,
@@ -20,8 +22,27 @@ import './Navbar.css';
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!userMenuOpen) {
+      return undefined;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [userMenuOpen]);
 
   async function handleLogout() {
     setUserMenuOpen(false);
@@ -88,6 +109,14 @@ export default function Navbar() {
                     Merken
                   </Link>
                   <Link
+                    to="/medewerkers"
+                    className="navbar-dropdown-link"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <Users size={20} />
+                    Medewerkers
+                  </Link>
+                  <Link
                     to="/onderdelen"
                     className="navbar-dropdown-link"
                     onClick={() => setMenuOpen(false)}
@@ -101,7 +130,7 @@ export default function Navbar() {
           </div>
           {user && (
             <div className="navbar-auth">
-              <div className="navbar-user-menu-wrap">
+              <div className="navbar-user-menu-wrap" ref={userMenuRef}>
                 <button
                   type="button"
                   className="navbar-link navbar-user-menu-btn"
@@ -124,6 +153,10 @@ export default function Navbar() {
                         <Link to="/users-log" className="navbar-user-menu-item" onClick={() => setUserMenuOpen(false)}>
                           <User size={18} />
                           Users Log
+                        </Link>
+                        <Link to="/activity-log" className="navbar-user-menu-item" onClick={() => setUserMenuOpen(false)}>
+                          <History size={18} />
+                          Activity Log
                         </Link>
                       </>
                     )}

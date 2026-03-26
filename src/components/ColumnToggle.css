@@ -34,12 +34,10 @@
 .column-toggle-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0.35rem 0.5rem;
   cursor: pointer;
   font-size: 0.875rem;
-}
-
-.column-toggle-item input {
-  accent-color: var(--accent);
+  border-radius: 10px;
 }

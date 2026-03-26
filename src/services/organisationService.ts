@@ -1,5 +1,5 @@
 import { getSupabase } from '../lib/supabase';
-import type { Structure, Department } from '../types/database';
+import type { Structure, Department, Rank } from '../types/database';
 
 export interface CsvPreviewRow {
   structuur: string;
@@ -190,6 +190,56 @@ export const OrganisationService = {
 
   async deleteDepartment(id: string): Promise<void> {
     const { error } = await getSupabase().from('departments').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async listRanks(): Promise<Rank[]> {
+    const { data, error } = await getSupabase()
+      .from('ranks')
+      .select('*')
+      .order('sort_order')
+      .order('rang');
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async createRank(rang: string, afkorting: string): Promise<Rank> {
+    const { data, error } = await getSupabase()
+      .from('ranks')
+      .insert({
+        rang: rang.trim(),
+        afkorting: afkorting.trim(),
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateRank(id: string, rang: string, afkorting: string): Promise<Rank> {
+    const { data, error } = await getSupabase()
+      .from('ranks')
+      .update({
+        rang: rang.trim(),
+        afkorting: afkorting.trim(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteRank(id: string): Promise<void> {
+    const { error } = await getSupabase().from('ranks').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async moveRank(id: string, direction: 'up' | 'down'): Promise<void> {
+    const { error } = await getSupabase().rpc('move_rank', {
+      p_rank_id: id,
+      p_direction: direction,
+    });
     if (error) throw error;
   },
 

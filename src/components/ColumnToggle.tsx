@@ -40,13 +40,16 @@ export default function ColumnToggle({ columns, onToggle }: ColumnToggleProps) {
       {open && (
         <div className="column-toggle-dropdown">
           {columns.map((col) => (
-            <label key={col.key} className="column-toggle-item">
-              <input
-                type="checkbox"
-                checked={col.visible}
-                onChange={(e) => onToggle(col.key, e.target.checked)}
-              />
+            <label key={col.key} className="column-toggle-item app-switch-field">
               <span>{col.label}</span>
+              <span className="app-switch-control">
+                <input
+                  type="checkbox"
+                  checked={col.visible}
+                  onChange={(e) => onToggle(col.key, e.target.checked)}
+                />
+                <span className="app-switch-slider" aria-hidden="true" />
+              </span>
             </label>
           ))}
         </div>

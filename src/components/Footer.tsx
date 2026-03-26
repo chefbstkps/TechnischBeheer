@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-inner">
-        <span>Technisch Beheer KPS 2026. Powered by: A. Levens</span>
+        <span>Technisch Beheer KPS 2026. Programmed by: A. Levens</span>
         <span className="footer-version">v{version}</span>
       </div>
     </footer>

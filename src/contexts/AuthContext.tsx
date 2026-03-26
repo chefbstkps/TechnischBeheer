@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import type { AppUser, LoginCredentials, UserPageVisibility } from '../types/auth';
+import type { AppUser, LoginCredentials, LoginOptions, LoginResult, UserPageVisibility } from '../types/auth';
 import * as AuthService from '../services/authService';
 
 interface AuthState {
@@ -8,7 +8,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  signIn: (credentials: LoginCredentials) => Promise<void>;
+  signIn: (credentials: LoginCredentials, options?: LoginOptions) => Promise<LoginResult>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isAdmin: () => boolean;
@@ -22,21 +22,31 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({ user: null, loading: true });
   const timeoutRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const validationRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearSession = useCallback(() => {
     try {
       localStorage.removeItem(AuthService.authStorageKeys.user);
+      localStorage.removeItem(AuthService.authStorageKeys.sessionToken);
       localStorage.removeItem(AuthService.authStorageKeys.loggedInAt);
       localStorage.removeItem(AuthService.authStorageKeys.lastActivityAt);
     } catch {}
     setState((s) => (s.user ? { ...s, user: null } : s));
   }, []);
 
-  const refreshUser = useCallback(async () => {
+  const invalidateSession = useCallback(() => {
+    clearSession();
+    setState({ user: null, loading: false });
+    window.location.replace('/login');
+  }, [clearSession]);
+
+  const restoreSession = useCallback(async (): Promise<boolean> => {
     const raw = localStorage.getItem(AuthService.authStorageKeys.user);
-    if (!raw) {
+    const sessionToken = localStorage.getItem(AuthService.authStorageKeys.sessionToken);
+    if (!raw || !sessionToken) {
+      clearSession();
       setState({ user: null, loading: false });
-      return;
+      return false;
     }
     let stored: AppUser;
     try {
@@ -44,13 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       clearSession();
       setState({ user: null, loading: false });
-      return;
+      return false;
+    }
+    const isValid = await AuthService.validateSession(stored.id, sessionToken);
+    if (!isValid) {
+      clearSession();
+      setState({ user: null, loading: false });
+      return false;
     }
     const user = await AuthService.getCurrentUser(stored.id);
     if (!user) {
       clearSession();
       setState({ user: null, loading: false });
-      return;
+      return false;
     }
     const visibility = await AuthService.getUserPageVisibility(user.id);
     const merged: AppUser = { ...user, page_visibility: visibility };
@@ -58,7 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(AuthService.authStorageKeys.user, JSON.stringify(merged));
     } catch {}
     setState({ user: merged, loading: false });
+    return true;
   }, [clearSession]);
+
+  const refreshUser = useCallback(async () => {
+    await restoreSession();
+  }, [restoreSession]);
 
   const updateLastActivity = useCallback(() => {
     try {
@@ -68,34 +89,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const raw = localStorage.getItem(AuthService.authStorageKeys.user);
-    if (!raw) {
-      setState({ user: null, loading: false });
+    void restoreSession();
+  }, [restoreSession]);
+
+  useEffect(() => {
+    if (!state.user) {
+      if (validationRef.current) {
+        clearInterval(validationRef.current);
+        validationRef.current = null;
+      }
       return;
     }
-    let stored: AppUser;
-    try {
-      stored = JSON.parse(raw);
-    } catch {
-      clearSession();
-      setState({ user: null, loading: false });
-      return;
-    }
-    (async () => {
-      const user = await AuthService.getCurrentUser(stored.id);
-      if (!user) {
-        clearSession();
-        setState({ user: null, loading: false });
+
+    const validate = async () => {
+      const sessionToken = localStorage.getItem(AuthService.authStorageKeys.sessionToken);
+      if (!sessionToken) {
+        invalidateSession();
         return;
       }
-      const visibility = await AuthService.getUserPageVisibility(user.id);
-      const merged: AppUser = { ...user, page_visibility: visibility };
-      try {
-        localStorage.setItem(AuthService.authStorageKeys.user, JSON.stringify(merged));
-      } catch {}
-      setState({ user: merged, loading: false });
-    })();
-  }, [clearSession]);
+      const valid = await AuthService.validateSession(state.user!.id, sessionToken);
+      if (!valid) {
+        invalidateSession();
+      }
+    };
+
+    void validate();
+    validationRef.current = setInterval(() => {
+      void validate();
+    }, 30_000);
+
+    const handleFocus = () => {
+      void validate();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      if (validationRef.current) {
+        clearInterval(validationRef.current);
+        validationRef.current = null;
+      }
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [state.user, invalidateSession]);
 
   // Session timeout check every minute
   useEffect(() => {
@@ -129,7 +165,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (expiry != null && Date.now() >= expiry) {
         if (timeoutRef.current) clearInterval(timeoutRef.current);
         timeoutRef.current = null;
-        AuthService.logout(state.user!.id).catch(() => {});
+        const sessionToken = localStorage.getItem(AuthService.authStorageKeys.sessionToken);
+        AuthService.logout(state.user!.id, sessionToken).catch(() => {});
         clearSession();
         window.location.replace('/login');
       }
@@ -152,25 +189,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [state.user?.id, state.user?.session_timeout_type, updateLastActivity]);
 
   const signIn = useCallback(
-    async (credentials: LoginCredentials) => {
-      const user = await AuthService.login(credentials);
-      const visibility: UserPageVisibility = await AuthService.getUserPageVisibility(user.id);
-      const merged: AppUser = { ...user, page_visibility: visibility };
+    async (credentials: LoginCredentials, options: LoginOptions = {}) => {
+      const result = await AuthService.login(credentials, options);
+      if (result.status === 'conflict') {
+        return result;
+      }
+
+      const visibility: UserPageVisibility = await AuthService.getUserPageVisibility(result.user.id);
+      const merged: AppUser = { ...result.user, page_visibility: visibility };
       const now = Date.now().toString();
       try {
         localStorage.setItem(AuthService.authStorageKeys.user, JSON.stringify(merged));
+        localStorage.setItem(AuthService.authStorageKeys.sessionToken, result.sessionToken);
         localStorage.setItem(AuthService.authStorageKeys.loggedInAt, now);
         localStorage.setItem(AuthService.authStorageKeys.lastActivityAt, now);
       } catch (e) {
         throw new Error('Sessie opslaan mislukt');
       }
       setState({ user: merged, loading: false });
+      return result;
     },
     []
   );
 
   const signOut = useCallback(async () => {
-    if (state.user) await AuthService.logout(state.user.id).catch(() => {});
+    const sessionToken = localStorage.getItem(AuthService.authStorageKeys.sessionToken);
+    if (state.user) await AuthService.logout(state.user.id, sessionToken).catch(() => {});
     clearSession();
   }, [state.user, clearSession]);
 

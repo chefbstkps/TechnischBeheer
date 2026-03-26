@@ -246,6 +246,9 @@ export default function ActivityDetail() {
                   {a.bedrag != null && (
                     <p className="aanpak-bedrag-row">{formatCurrency(a.bedrag)}</p>
                   )}
+                  <p className="aanpak-meta">
+                    Toegevoegd door: {a.created_by?.display_name ?? '-'}
+                  </p>
                   {editingAanpakId === a.id ? (
                     <div className="aanpak-form-new aanpak-edit-form">
                       <div className="aanpak-form-row">

@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowDown, ArrowUp, Pencil, Trash2 } from 'lucide-react';
 import {
   OrganisationService,
   parseAndValidateCsv,
   type CsvParseResult,
 } from '../services/organisationService';
-import type { Structure, Department } from '../types/database';
+import type { Structure, Department, Rank } from '../types/database';
 import './Organisatie.css';
 
 const CSV_VOORBEELD = `structuur,structuurbeschrijving,afdeling,afdelingbeschrijving
@@ -35,6 +36,12 @@ export default function Organisatie() {
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [csvParseResult, setCsvParseResult] = useState<CsvParseResult | null>(null);
   const [csvRawContent, setCsvRawContent] = useState<string>('');
+  const [addingRank, setAddingRank] = useState(false);
+  const [newRankName, setNewRankName] = useState('');
+  const [newRankAfkorting, setNewRankAfkorting] = useState('');
+  const [editingRank, setEditingRank] = useState<Rank | null>(null);
+  const [editRankName, setEditRankName] = useState('');
+  const [editRankAfkorting, setEditRankAfkorting] = useState('');
 
   const { data: structures = [], isLoading: structuresLoading } = useQuery({
     queryKey: ['structures'],
@@ -44,6 +51,11 @@ export default function Organisatie() {
   const { data: departments = [] } = useQuery({
     queryKey: ['departments'],
     queryFn: () => OrganisationService.listDepartments(),
+  });
+
+  const { data: ranks = [], isLoading: ranksLoading } = useQuery({
+    queryKey: ['ranks'],
+    queryFn: () => OrganisationService.listRanks(),
   });
 
   const departmentsByStructure = departments.reduce<Record<string, Department[]>>((acc, d) => {
@@ -145,6 +157,43 @@ export default function Organisatie() {
     },
   });
 
+  const createRankMutation = useMutation({
+    mutationFn: ({ rang, afkorting }: { rang: string; afkorting: string }) =>
+      OrganisationService.createRank(rang, afkorting),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ranks'] });
+      setAddingRank(false);
+      setNewRankName('');
+      setNewRankAfkorting('');
+    },
+  });
+
+  const updateRankMutation = useMutation({
+    mutationFn: ({ id, rang, afkorting }: { id: string; rang: string; afkorting: string }) =>
+      OrganisationService.updateRank(id, rang, afkorting),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ranks'] });
+      setEditingRank(null);
+      setEditRankName('');
+      setEditRankAfkorting('');
+    },
+  });
+
+  const deleteRankMutation = useMutation({
+    mutationFn: (id: string) => OrganisationService.deleteRank(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ranks'] });
+    },
+  });
+
+  const moveRankMutation = useMutation({
+    mutationFn: ({ id, direction }: { id: string; direction: 'up' | 'down' }) =>
+      OrganisationService.moveRank(id, direction),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ranks'] });
+    },
+  });
+
   const importCsvMutation = useMutation({
     mutationFn: (csvContent: string) => OrganisationService.importFromCsv(csvContent),
     onSuccess: (result) => {
@@ -234,6 +283,12 @@ export default function Organisatie() {
     a.download = 'organisatie_voorbeeld.csv';
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleStartEditRank = (rank: Rank) => {
+    setEditingRank(rank);
+    setEditRankName(rank.rang);
+    setEditRankAfkorting(rank.afkorting);
   };
 
   return (
@@ -663,6 +718,205 @@ export default function Organisatie() {
           </ul>
         )}
       </div>
+
+      <section className="organisatie-ranks-section">
+        <div className="organisatie-ranks-header">
+          <div>
+            <h2>Rangen</h2>
+            <p className="organisatie-ranks-desc">
+              Overzicht van politierangen en hun afkortingen.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-add-structure"
+            onClick={() => setAddingRank(true)}
+          >
+            + Rang toevoegen
+          </button>
+        </div>
+
+        <div className="organisatie-ranks-table-wrap">
+          <table className="organisatie-ranks-table">
+            <thead>
+              <tr>
+                <th>Rang</th>
+                <th>Afkorting</th>
+                <th>Acties</th>
+              </tr>
+            </thead>
+            <tbody>
+              {addingRank && (
+                <tr>
+                  <td>
+                    <input
+                      className="organisatie-ranks-input"
+                      placeholder="Rang"
+                      value={newRankName}
+                      onChange={(e) => setNewRankName(e.target.value)}
+                      autoFocus
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="organisatie-ranks-input"
+                      placeholder="Afkorting"
+                      value={newRankAfkorting}
+                      onChange={(e) => setNewRankAfkorting(e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <div className="organisatie-ranks-row-actions">
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() =>
+                          createRankMutation.mutate({
+                            rang: newRankName.trim(),
+                            afkorting: newRankAfkorting.trim(),
+                          })
+                        }
+                        disabled={!newRankName.trim() || !newRankAfkorting.trim()}
+                      >
+                        Opslaan
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={() => {
+                          setAddingRank(false);
+                          setNewRankName('');
+                          setNewRankAfkorting('');
+                        }}
+                      >
+                        Annuleren
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {ranksLoading ? (
+                <tr>
+                  <td colSpan={3} className="organisatie-ranks-empty">
+                    Laden...
+                  </td>
+                </tr>
+              ) : ranks.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="organisatie-ranks-empty">
+                    Nog geen rangen toegevoegd.
+                  </td>
+                </tr>
+              ) : (
+                ranks.map((rank, index) => (
+                  <tr key={rank.id}>
+                    {editingRank?.id === rank.id ? (
+                      <>
+                        <td>
+                          <input
+                            className="organisatie-ranks-input"
+                            placeholder="Rang"
+                            value={editRankName}
+                            onChange={(e) => setEditRankName(e.target.value)}
+                            autoFocus
+                          />
+                        </td>
+                        <td>
+                          <input
+                            className="organisatie-ranks-input"
+                            placeholder="Afkorting"
+                            value={editRankAfkorting}
+                            onChange={(e) => setEditRankAfkorting(e.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <div className="organisatie-ranks-row-actions">
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() =>
+                                updateRankMutation.mutate({
+                                  id: rank.id,
+                                  rang: editRankName.trim(),
+                                  afkorting: editRankAfkorting.trim(),
+                                })
+                              }
+                              disabled={!editRankName.trim() || !editRankAfkorting.trim()}
+                            >
+                              Opslaan
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() => {
+                                setEditingRank(null);
+                                setEditRankName('');
+                                setEditRankAfkorting('');
+                              }}
+                            >
+                              Annuleren
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{rank.rang}</td>
+                        <td>{rank.afkorting}</td>
+                        <td>
+                          <div className="organisatie-ranks-icon-actions">
+                            <button
+                              type="button"
+                              className="organisatie-ranks-action-btn"
+                              onClick={() => moveRankMutation.mutate({ id: rank.id, direction: 'up' })}
+                              title="Omhoog"
+                              aria-label="Omhoog"
+                              disabled={index === 0 || moveRankMutation.isPending}
+                            >
+                              <ArrowUp size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="organisatie-ranks-action-btn"
+                              onClick={() => moveRankMutation.mutate({ id: rank.id, direction: 'down' })}
+                              title="Omlaag"
+                              aria-label="Omlaag"
+                              disabled={index === ranks.length - 1 || moveRankMutation.isPending}
+                            >
+                              <ArrowDown size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="organisatie-ranks-action-btn"
+                              onClick={() => handleStartEditRank(rank)}
+                              title="Bewerken"
+                              aria-label="Bewerken"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="organisatie-ranks-action-btn organisatie-ranks-action-btn-danger"
+                              onClick={() =>
+                                confirm('Rang wissen?') && deleteRankMutation.mutate(rank.id)
+                              }
+                              title="Wissen"
+                              aria-label="Wissen"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

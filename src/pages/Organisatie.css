@@ -45,6 +45,123 @@
   padding: 1.25rem;
 }
 
+.organisatie-ranks-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.organisatie-ranks-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.organisatie-ranks-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.125rem;
+}
+
+.organisatie-ranks-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.organisatie-ranks-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.organisatie-ranks-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.organisatie-ranks-table th,
+.organisatie-ranks-table td {
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.organisatie-ranks-table th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.organisatie-ranks-table tr:last-child td {
+  border-bottom: none;
+}
+
+.organisatie-ranks-input {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.organisatie-ranks-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.organisatie-ranks-empty {
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.organisatie-ranks-row-actions,
+.organisatie-ranks-icon-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.organisatie-ranks-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.organisatie-ranks-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.organisatie-ranks-action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.organisatie-ranks-action-btn:disabled:hover {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.organisatie-ranks-action-btn-danger:hover {
+  color: var(--error, #ef4444);
+}
+
 .organisatie-tree-toolbar {
   margin-bottom: 1rem;
 }

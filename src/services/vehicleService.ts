@@ -1,6 +1,8 @@
 import { getSupabase } from '../lib/supabase';
 import { OrganisationService } from './organisationService';
+import { ActivityLogService } from './activityLogService';
 import { isValidLicensePlateFormat } from '../utils/licensePlate';
+import { buildFieldChanges } from '../utils/activityLog';
 import type { Vehicle, VehicleWithRelations, Inzet } from '../types/database';
 
 export interface CsvVehiclePreviewRow {
@@ -30,6 +32,35 @@ const VALID_TRANSMISSIE = ['automaat', 'manual'];
 const VALID_AANDRIJVING = ['4wd', '2wd'];
 const VALID_VERZEKERD = ['self-reliance', 'assuria', 'parsasco', 'fatum'];
 const VALID_VERZEKERTYPE = ['wa', 'mini casco', 'casco'];
+
+const VEHICLE_DIFF_FIELDS = [
+  { field: 'license_plate', label: 'Kenteken', getValue: (vehicle: VehicleWithRelations) => vehicle.license_plate },
+  { field: 'inzet', label: 'Inzet', getValue: (vehicle: VehicleWithRelations) => vehicle.inzet },
+  { field: 'merk', label: 'Merk', getValue: (vehicle: VehicleWithRelations) => vehicle.merk },
+  { field: 'model', label: 'Model', getValue: (vehicle: VehicleWithRelations) => vehicle.model },
+  { field: 'bouwjaar', label: 'Bouwjaar', getValue: (vehicle: VehicleWithRelations) => vehicle.bouwjaar },
+  { field: 'soort', label: 'Soort', getValue: (vehicle: VehicleWithRelations) => vehicle.soort },
+  { field: 'status', label: 'Status', getValue: (vehicle: VehicleWithRelations) => vehicle.status },
+  {
+    field: 'structure',
+    label: 'Structuur',
+    getValue: (vehicle: VehicleWithRelations) =>
+      (vehicle.structure as { name?: string } | undefined)?.name ?? null,
+  },
+  {
+    field: 'department',
+    label: 'Afdeling',
+    getValue: (vehicle: VehicleWithRelations) =>
+      (vehicle.department as { name?: string } | undefined)?.name ?? null,
+  },
+  { field: 'chassisnummer', label: 'Chassisnummer', getValue: (vehicle: VehicleWithRelations) => vehicle.chassisnummer },
+  { field: 'verzekerd', label: 'Verzekerd bij', getValue: (vehicle: VehicleWithRelations) => vehicle.verzekerd },
+  { field: 'verzekertype', label: 'Verzekertype', getValue: (vehicle: VehicleWithRelations) => vehicle.verzekertype },
+  { field: 'polisnummer', label: 'Polisnummer', getValue: (vehicle: VehicleWithRelations) => vehicle.polisnummer },
+  { field: 'start_datum', label: 'Startdatum verzekering', getValue: (vehicle: VehicleWithRelations) => vehicle.start_datum },
+  { field: 'eind_datum', label: 'Einddatum verzekering', getValue: (vehicle: VehicleWithRelations) => vehicle.eind_datum },
+  { field: 'opmerking', label: 'Opmerking', getValue: (vehicle: VehicleWithRelations) => vehicle.opmerking },
+];
 
 function colIndex(colsLower: string[], ...names: string[]): number {
   for (const n of names) {
@@ -216,7 +247,16 @@ export const VehicleService = {
       )
       .order('license_plate');
     if (error) throw error;
-    return data ?? [];
+    const vehicles = data ?? [];
+    const createdByMap = await ActivityLogService.getCreatedByMap(
+      'vehicle',
+      'vehicle_created',
+      vehicles.map((vehicle) => vehicle.id)
+    );
+    return vehicles.map((vehicle) => ({
+      ...vehicle,
+      created_by: createdByMap[vehicle.id] ?? null,
+    }));
   },
 
   async getById(id: string): Promise<VehicleWithRelations | null> {
@@ -235,7 +275,11 @@ export const VehicleService = {
       if (error.code === 'PGRST116') return null;
       throw error;
     }
-    return data;
+    const createdByMap = await ActivityLogService.getCreatedByMap('vehicle', 'vehicle_created', [id]);
+    return {
+      ...data,
+      created_by: createdByMap[id] ?? null,
+    };
   },
 
   async checkLicensePlateUnique(
@@ -266,6 +310,25 @@ export const VehicleService = {
       .select()
       .single();
     if (error) throw error;
+    const createdVehicle = await this.getById(data.id);
+    await ActivityLogService.log({
+      user_id: null,
+      activity_type: 'vehicle_created',
+      subject_type: 'vehicle',
+      subject_id: data.id,
+      subject_label: createdVehicle?.license_plate ?? data.license_plate,
+      amount: null,
+      details: {
+        changes: createdVehicle
+          ? VEHICLE_DIFF_FIELDS.map((field) => ({
+              field: field.field,
+              label: field.label,
+              before: null,
+              after: field.getValue(createdVehicle),
+            }))
+          : null,
+      },
+    }).catch(() => undefined);
     return data;
   },
 
@@ -273,6 +336,7 @@ export const VehicleService = {
     id: string,
     updates: Partial<Omit<Vehicle, 'id'>>
   ): Promise<Vehicle> {
+    const before = await this.getById(id);
     const payload = normalizeVehicleFields({
       ...updates,
       updated_at: new Date().toISOString(),
@@ -287,12 +351,46 @@ export const VehicleService = {
       .select()
       .single();
     if (error) throw error;
+    const after = await this.getById(id);
+    if (before && after) {
+      const changes = buildFieldChanges(before, after, VEHICLE_DIFF_FIELDS);
+      if (changes.length > 0) {
+        await ActivityLogService.log({
+          user_id: null,
+          activity_type: 'vehicle_updated',
+          subject_type: 'vehicle',
+          subject_id: id,
+          subject_label: after.license_plate,
+          amount: null,
+          details: { changes },
+        }).catch(() => undefined);
+      }
+    }
     return data;
   },
 
   async delete(id: string): Promise<void> {
+    const vehicle = await this.getById(id);
     const { error } = await getSupabase().from('vehicles').delete().eq('id', id);
     if (error) throw error;
+    if (vehicle) {
+      await ActivityLogService.log({
+        user_id: null,
+        activity_type: 'vehicle_deleted',
+        subject_type: 'vehicle',
+        subject_id: id,
+        subject_label: vehicle.license_plate,
+        amount: null,
+        details: {
+          snapshot: {
+            kenteken: vehicle.license_plate,
+            merk: vehicle.merk,
+            model: vehicle.model,
+            status: vehicle.status,
+          },
+        },
+      }).catch(() => undefined);
+    }
   },
 
   /**

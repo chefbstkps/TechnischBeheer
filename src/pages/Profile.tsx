@@ -6,8 +6,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import './Profile.css';
 
 export default function Profile() {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
+  const { user, refreshUser } = useAuth();
+  const [activeTab, setActiveTab] = useState<'profile' | 'password'>(user?.must_change_password ? 'password' : 'profile');
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -20,6 +20,7 @@ export default function Profile() {
   const [confirm_password, setConfirm_password] = useState('');
 
   if (!user) return null;
+  const mustChangePassword = user.must_change_password;
 
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,8 +31,8 @@ export default function Profile() {
       setPasswordError('Nieuw wachtwoord en bevestiging komen niet overeen.');
       return;
     }
-    if (new_password.length < 6) {
-      setPasswordError('Nieuw wachtwoord moet minimaal 6 tekens zijn.');
+    if (new_password.length < 8) {
+      setPasswordError('Nieuw wachtwoord moet minimaal 8 tekens zijn.');
       return;
     }
     setPasswordSaving(true);
@@ -42,6 +43,7 @@ export default function Profile() {
         confirm_password,
       };
       await AuthService.changePassword(user.id, data);
+      await refreshUser();
       setPasswordMessage('Wachtwoord is gewijzigd.');
       setCurrent_password('');
       setNew_password('');
@@ -57,11 +59,20 @@ export default function Profile() {
     <div className="profile-page">
       <h1 className="profile-title">Mijn profiel</h1>
 
+      {mustChangePassword ? (
+        <div className="profile-warning" role="alert">
+          Je wachtwoord is gereset. Wijzig eerst je wachtwoord voordat je verder kunt in de app.
+        </div>
+      ) : null}
+
       <div className="profile-tabs">
         <button
           type="button"
           className={`profile-tab ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
+          onClick={() => {
+            if (!mustChangePassword) setActiveTab('profile');
+          }}
+          disabled={mustChangePassword}
         >
           Profiel
         </button>
@@ -150,7 +161,7 @@ export default function Profile() {
                   value={new_password}
                   onChange={(e) => setNew_password(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   disabled={passwordSaving}
                 />
                 <button
@@ -174,7 +185,7 @@ export default function Profile() {
                   value={confirm_password}
                   onChange={(e) => setConfirm_password(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   disabled={passwordSaving}
                 />
                 <button
@@ -188,6 +199,9 @@ export default function Profile() {
                 </button>
               </div>
             </div>
+            <p className="profile-info">
+              Nieuw wachtwoord moet minimaal 8 tekens bevatten.
+            </p>
             <button type="submit" className="btn-primary" disabled={passwordSaving}>
               {passwordSaving ? 'Bezig...' : 'Wachtwoord wijzigen'}
             </button>

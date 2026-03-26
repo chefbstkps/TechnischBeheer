@@ -59,6 +59,8 @@ export default function AddRepairModal({ onClose }: AddRepairModalProps) {
       RepairService.create(selectedVehicle!.id, newRepairReden, {
         datum_melding: newRepairDatum || null,
         melding: newRepairBeschrijving.trim() || null,
+      }, {
+        source: 'Repairs',
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['repairs-all'] });

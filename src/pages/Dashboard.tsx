@@ -1,11 +1,32 @@
 import { useQuery } from '@tanstack/react-query';
-import { Car, CircleDollarSign, ClipboardList, Wrench } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { AlertTriangle, Car, CircleDollarSign, ClipboardList, Wrench } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { DashboardService } from '../services/dashboardService';
+import { VehicleService } from '../services/vehicleService';
+import * as AuthService from '../services/authService';
 import { capitalizeFirst } from '../utils/string';
 import './Dashboard.css';
 
+function getLocalDateString(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value: string): Date | null {
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 export default function Dashboard() {
+  const { isAdmin } = useAuth();
+  const admin = isAdmin();
+  const navigate = useNavigate();
+
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => DashboardService.getStats(),
@@ -21,6 +42,19 @@ export default function Dashboard() {
     queryFn: () => DashboardService.getRecentMaintenance(5),
   });
 
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['dashboard-vehicles'],
+    queryFn: () => VehicleService.list(),
+  });
+
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['dashboard-users-pending-approval'],
+    queryFn: () => AuthService.getAllUsers(),
+    enabled: admin,
+  });
+
+  const pendingApprovalCount = allUsers.filter((user) => !user.is_active).length;
+
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat('nl-SR', {
       style: 'currency',
@@ -30,11 +64,24 @@ export default function Dashboard() {
     }).format(n);
 
   const formatDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString('nl-NL') : '-';
+    d ? parseLocalDate(d)?.toLocaleDateString('nl-NL') ?? '-' : '-';
+
+  const expiredInsuranceVehicles = vehicles
+    .filter((vehicle) => {
+      const insuranceValidUntil = vehicle.eind_datum?.slice(0, 10);
+      return Boolean(insuranceValidUntil && insuranceValidUntil < getLocalDateString());
+    })
+    .sort((a, b) => (a.eind_datum ?? '').localeCompare(b.eind_datum ?? ''));
 
   return (
     <div className="dashboard">
       <h1 className="dashboard-title">Technisch Beheer Dashboard</h1>
+
+      {admin && pendingApprovalCount > 0 ? (
+        <Link to="/user-management" className="dashboard-approval-alert">
+          {pendingApprovalCount} gebruiker{pendingApprovalCount === 1 ? '' : 's'} wachten op goedkeuring!
+        </Link>
+      ) : null}
 
       {statsLoading ? (
         <div className="dashboard-loading">Laden...</div>
@@ -69,6 +116,13 @@ export default function Dashboard() {
             <span className="stat-value">
               {formatCurrency(stats?.totalRepairCosts ?? 0)}
             </span>
+          </div>
+          <div className="stat-card stat-card-expired-insurance">
+            <div className="stat-card-icon">
+              <AlertTriangle size={22} strokeWidth={2} />
+            </div>
+            <span className="stat-label">Vervallen verzekeringen</span>
+            <span className="stat-value">{expiredInsuranceVehicles.length}</span>
           </div>
         </div>
       )}
@@ -125,6 +179,54 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {expiredInsuranceVehicles.length > 0 ? (
+        <section className="dashboard-expired-insurance">
+          <h2>Vervallen Verzekeringen</h2>
+          <div className="dashboard-table-wrap">
+            <table className="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Kenteken</th>
+                  <th>Merk</th>
+                  <th>Model</th>
+                  <th>Verzekerd bij</th>
+                  <th>Polisnummer</th>
+                  <th>Verzekering geldig tot</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expiredInsuranceVehicles.map((vehicle) => (
+                  <tr
+                    key={vehicle.id}
+                    className="dashboard-table-row-clickable"
+                    onClick={() => navigate(`/automontage/voertuig/${vehicle.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/automontage/voertuig/${vehicle.id}`);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="link"
+                  >
+                    <td className="dashboard-table-link">{vehicle.license_plate}</td>
+                    <td>{vehicle.merk || '-'}</td>
+                    <td>{vehicle.model || '-'}</td>
+                    <td>{vehicle.verzekerd || '-'}</td>
+                    <td>{vehicle.polisnummer || '-'}</td>
+                    <td>{formatDate(vehicle.eind_datum)}</td>
+                    <td>
+                      <span className="dashboard-status-invalid">Ongeldig</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
