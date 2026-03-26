@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import type { LoginConflict } from '../types/auth';
+import packageJson from '../../package.json';
 import './Login.css';
 
 export default function Login() {
@@ -163,6 +164,7 @@ export default function Login() {
         <p className="login-signup-link">
           Nog geen account? <Link to="/signup">Registreer hier</Link>
         </p>
+        <span className="login-version">v{packageJson.version}</span>
       </div>
     </div>
   );

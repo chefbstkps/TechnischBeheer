@@ -153,3 +153,14 @@
 .login-signup-link a {
   color: var(--accent);
 }
+
+.login-version {
+  display: block;
+  margin-top: 1.25rem;
+  text-align: center;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted, #718096);
+  opacity: 0.5;
+  user-select: none;
+}
