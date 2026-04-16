@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from 'lucide-react';
 import {
   OrganisationService,
+  buildOrganisationCsvExport,
   parseAndValidateCsv,
   type CsvParseResult,
 } from '../services/organisationService';
@@ -285,6 +286,17 @@ export default function Organisatie() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportOrganisatieCsv = () => {
+    const csv = buildOrganisationCsvExport(structures, departments);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'organisatie_export.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleStartEditRank = (rank: Rank) => {
     setEditingRank(rank);
     setEditRankName(rank.rang);
@@ -309,7 +321,7 @@ export default function Organisatie() {
         <div className="modal-overlay" onClick={handleCloseImportModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Organisatie importeren</h2>
+              <h2>Organisatie importeren en exporteren</h2>
               <button
                 type="button"
                 className="modal-close"
@@ -349,6 +361,13 @@ export default function Organisatie() {
                       onClick={handleDownloadVoorbeeld}
                     >
                       Voorbeeld CSV downloaden
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={handleExportOrganisatieCsv}
+                    >
+                      Huidige organisatie exporteren
                     </button>
                   </div>
                 </>

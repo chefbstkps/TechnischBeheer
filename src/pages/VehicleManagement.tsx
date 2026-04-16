@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, CheckCircle, AlertCircle, AlertTriangle, XCircle, Search } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle, AlertCircle, AlertTriangle, XCircle, Search, Car } from 'lucide-react';
 import {
   VehicleService,
   parseAndValidateVehicleCsv,
@@ -67,9 +67,9 @@ function getInitialColumns(): ColumnConfig[] {
   }
 }
 
-const CSV_VOORBEELD = `kenteken,inzet,merk,model,bouwjaar,structuur,afdeling,soort,status
-PA-12-34,Burgerplaat,Toyota,Hilux,2020,BvB,Transport,Pickup,Goed
-1234-D,Dienstplaat,Mitsubishi,L200,2019,,,Pickup,Redelijk
+const CSV_VOORBEELD = `kenteken,inzet,merk,model,bouwjaar,structuur,afdeling,soort,status,transmissie,aandrijving,chassisnummer,verzekerd,verzekertype,polisnummer,start_datum,eind_datum,opmerking
+PA-12-34,Burgerplaat,Toyota,Hilux,2020,BvB,Transport,Pickup,Goed,automaat,4WD,JTFBA61J602000001,Assuria,Casco,POL-001,2025-01-01,2026-01-01,Dienstvoertuig
+1234-D,Dienstplaat,Mitsubishi,L200,2019,,,Pickup,Redelijk,manual,2WD,,,,,,
 `;
 
 export default function VehicleManagement() {
@@ -89,6 +89,7 @@ export default function VehicleManagement() {
   const [vehicleToDelete, setVehicleToDelete] = useState<VehicleWithRelations | null>(null);
   const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
@@ -343,12 +344,22 @@ export default function VehicleManagement() {
   const normalizeLicensePlateForSearch = (s: string) =>
     s.replace(/\W/g, '').toLowerCase();
 
+  const toggleStatusFilter = (status: string) => {
+    setStatusFilter((prev) => (prev === status ? null : status));
+  };
+
   const filteredVehicles = useMemo(() => {
+    let result = vehicles;
+    if (statusFilter) {
+      result = result.filter(
+        (v) => String(v.status).toLowerCase() === statusFilter
+      );
+    }
     const q = searchQuery.trim();
-    if (!q) return vehicles;
+    if (!q) return result;
     const normalizedSearch = normalizeLicensePlateForSearch(q);
     const qLower = q.toLowerCase();
-    return vehicles.filter((v) => {
+    return result.filter((v) => {
       if (normalizeLicensePlateForSearch(v.license_plate).includes(normalizedSearch))
         return true;
       if (v.merk && v.merk.toLowerCase().includes(qLower)) return true;
@@ -359,7 +370,7 @@ export default function VehicleManagement() {
       if (departmentName && departmentName.toLowerCase().includes(qLower)) return true;
       return false;
     });
-  }, [vehicles, searchQuery]);
+  }, [vehicles, searchQuery, statusFilter]);
 
   return (
     <div className="vehicle-management">
@@ -382,34 +393,61 @@ export default function VehicleManagement() {
       </div>
 
       <div className="vehicle-management-stats">
-        <div className="vehicle-stat-card vehicle-stat-goed">
+        <button
+          type="button"
+          className={`vehicle-stat-card vehicle-stat-totaal${statusFilter === null ? ' vehicle-stat-active' : ''}`}
+          onClick={() => setStatusFilter(null)}
+        >
+          <Car size={28} aria-hidden />
+          <div className="vehicle-stat-content">
+            <span className="vehicle-stat-value">{vehicles.length}</span>
+            <span className="vehicle-stat-label">Totaal</span>
+          </div>
+        </button>
+        <button
+          type="button"
+          className={`vehicle-stat-card vehicle-stat-goed${statusFilter === 'goed' ? ' vehicle-stat-active' : ''}`}
+          onClick={() => toggleStatusFilter('goed')}
+        >
           <CheckCircle size={28} aria-hidden />
           <div className="vehicle-stat-content">
             <span className="vehicle-stat-value">{statusCounts.goed}</span>
             <span className="vehicle-stat-label">Goed</span>
           </div>
-        </div>
-        <div className="vehicle-stat-card vehicle-stat-redelijk">
+        </button>
+        <button
+          type="button"
+          className={`vehicle-stat-card vehicle-stat-redelijk${statusFilter === 'redelijk' ? ' vehicle-stat-active' : ''}`}
+          onClick={() => toggleStatusFilter('redelijk')}
+        >
           <AlertCircle size={28} aria-hidden />
           <div className="vehicle-stat-content">
             <span className="vehicle-stat-value">{statusCounts.redelijk}</span>
             <span className="vehicle-stat-label">Redelijk</span>
           </div>
-        </div>
-        <div className="vehicle-stat-card vehicle-stat-slecht">
+        </button>
+        <button
+          type="button"
+          className={`vehicle-stat-card vehicle-stat-slecht${statusFilter === 'slecht' ? ' vehicle-stat-active' : ''}`}
+          onClick={() => toggleStatusFilter('slecht')}
+        >
           <AlertTriangle size={28} aria-hidden />
           <div className="vehicle-stat-content">
             <span className="vehicle-stat-value">{statusCounts.slecht}</span>
             <span className="vehicle-stat-label">Slecht</span>
           </div>
-        </div>
-        <div className="vehicle-stat-card vehicle-stat-defect">
+        </button>
+        <button
+          type="button"
+          className={`vehicle-stat-card vehicle-stat-defect${statusFilter === 'defect' ? ' vehicle-stat-active' : ''}`}
+          onClick={() => toggleStatusFilter('defect')}
+        >
           <XCircle size={28} aria-hidden />
           <div className="vehicle-stat-content">
             <span className="vehicle-stat-value">{statusCounts.defect}</span>
             <span className="vehicle-stat-label">Defect</span>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="vehicle-management-columns-row">
@@ -445,10 +483,18 @@ export default function VehicleManagement() {
               {!csvParseResult ? (
                 <>
                   <p className="modal-hint">
-                    Upload een CSV-bestand met kolommen <strong>kenteken</strong>,{' '}
-                    <strong>inzet</strong>, <strong>merk</strong> en <strong>model</strong>.
-                    Optioneel: bouwjaar, structuur, afdeling, soort, status, etc.
+                    Upload een CSV-bestand. Verplichte kolommen zijn gemarkeerd met <span className="csv-required-marker">*</span>.
                   </p>
+                  <div className="csv-columns-overview">
+                    <div className="csv-columns-group">
+                      <span className="csv-columns-label">Verplicht:</span>
+                      <span>kenteken, inzet, merk, model</span>
+                    </div>
+                    <div className="csv-columns-group">
+                      <span className="csv-columns-label">Optioneel:</span>
+                      <span>bouwjaar, structuur, afdeling, soort, status, transmissie, aandrijving, chassisnummer, verzekerd, verzekertype, polisnummer, start_datum, eind_datum, opmerking</span>
+                    </div>
+                  </div>
 
                   <form className="import-upload" onSubmit={(e) => e.preventDefault()}>
                     <input
@@ -515,15 +561,24 @@ export default function VehicleManagement() {
                     <table className="import-preview-table">
                       <thead>
                         <tr>
-                          <th>Kenteken</th>
-                          <th>Inzet</th>
-                          <th>Merk</th>
-                          <th>Model</th>
+                          <th>Kenteken <span className="csv-required-marker">*</span></th>
+                          <th>Inzet <span className="csv-required-marker">*</span></th>
+                          <th>Merk <span className="csv-required-marker">*</span></th>
+                          <th>Model <span className="csv-required-marker">*</span></th>
                           <th>Bouwjaar</th>
                           <th>Structuur</th>
                           <th>Afdeling</th>
                           <th>Soort</th>
                           <th>Status</th>
+                          <th>Transmissie</th>
+                          <th>Aandrijving</th>
+                          <th>Chassisnr.</th>
+                          <th>Verzekerd</th>
+                          <th>Verzekertype</th>
+                          <th>Polisnr.</th>
+                          <th>Start datum</th>
+                          <th>Eind datum</th>
+                          <th>Opmerking</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -538,6 +593,15 @@ export default function VehicleManagement() {
                             <td>{row.afdeling || '—'}</td>
                             <td>{row.soort}</td>
                             <td>{row.status}</td>
+                            <td>{row.transmissie || '—'}</td>
+                            <td>{row.aandrijving || '—'}</td>
+                            <td>{row.chassisnummer || '—'}</td>
+                            <td>{row.verzekerd || '—'}</td>
+                            <td>{row.verzekertype || '—'}</td>
+                            <td>{row.polisnummer || '—'}</td>
+                            <td>{row.start_datum || '—'}</td>
+                            <td>{row.eind_datum || '—'}</td>
+                            <td className="csv-opmerking-cell">{row.opmerking || '—'}</td>
                           </tr>
                         ))}
                       </tbody>

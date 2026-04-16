@@ -117,6 +117,60 @@ export function parseAndValidateCsv(csvContent: string): CsvParseResult {
   };
 }
 
+function escapeCsvField(value: string | null | undefined): string {
+  const s = value ?? '';
+  if (/[",\r\n]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/**
+ * Build CSV in the same format as import: structuur,structuurbeschrijving,afdeling,afdelingbeschrijving
+ * Structures without departments get one row with empty afdeling columns.
+ */
+export function buildOrganisationCsvExport(
+  structures: Structure[],
+  departments: Department[]
+): string {
+  const header = 'structuur,structuurbeschrijving,afdeling,afdelingbeschrijving';
+  const byStructure = departments.reduce<Record<string, Department[]>>((acc, d) => {
+    if (!acc[d.structure_id]) acc[d.structure_id] = [];
+    acc[d.structure_id].push(d);
+    return acc;
+  }, {});
+  for (const id of Object.keys(byStructure)) {
+    byStructure[id].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  const rows: string[] = [header];
+  for (const s of structures) {
+    const depts = byStructure[s.id] ?? [];
+    if (depts.length === 0) {
+      rows.push(
+        [
+          escapeCsvField(s.name),
+          escapeCsvField(s.beschrijving),
+          '',
+          '',
+        ].join(',')
+      );
+    } else {
+      for (const d of depts) {
+        rows.push(
+          [
+            escapeCsvField(s.name),
+            escapeCsvField(s.beschrijving),
+            escapeCsvField(d.name),
+            escapeCsvField(d.beschrijving),
+          ].join(',')
+        );
+      }
+    }
+  }
+  return rows.join('\r\n');
+}
+
 export const OrganisationService = {
   async listStructures(): Promise<Structure[]> {
     const { data, error } = await getSupabase()

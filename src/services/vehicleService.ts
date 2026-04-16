@@ -15,6 +15,15 @@ export interface CsvVehiclePreviewRow {
   afdeling: string;
   soort: string;
   status: string;
+  transmissie: string;
+  aandrijving: string;
+  chassisnummer: string;
+  verzekerd: string;
+  verzekertype: string;
+  polisnummer: string;
+  start_datum: string;
+  eind_datum: string;
+  opmerking: string;
 }
 
 export interface CsvParseResult {
@@ -103,8 +112,13 @@ export function parseAndValidateVehicleCsv(csvContent: string): CsvParseResult {
   const statusIdx = colIndex(colsLower, 'status');
   const transmissieIdx = colIndex(colsLower, 'transmissie');
   const aandrijvingIdx = colIndex(colsLower, 'aandrijving');
+  const chassisnummerIdx = colIndex(colsLower, 'chassisnummer');
   const verzekerdIdx = colIndex(colsLower, 'verzekerd');
   const verzekertypeIdx = colIndex(colsLower, 'verzekertype');
+  const polisnummerIdx = colIndex(colsLower, 'polisnummer');
+  const startDatumIdx = colIndex(colsLower, 'start_datum', 'startdatum');
+  const eindDatumIdx = colIndex(colsLower, 'eind_datum', 'einddatum');
+  const opmerkingIdx = colIndex(colsLower, 'opmerking');
 
   if (kentekenIdx < 0) errors.push('Ontbrekende verplichte kolom: "kenteken".');
   if (inzetIdx < 0) errors.push('Ontbrekende verplichte kolom: "inzet".');
@@ -136,10 +150,15 @@ export function parseAndValidateVehicleCsv(csvContent: string): CsvParseResult {
     const afdeling = (parts[afdelingIdx] ?? '').trim();
     const soort = (parts[soortIdx] ?? '').trim();
     const status = (parts[statusIdx] ?? '').trim();
-    const transmissie = parts[transmissieIdx] ?? '';
-    const aandrijving = parts[aandrijvingIdx] ?? '';
+    const transmissie = (parts[transmissieIdx] ?? '').trim();
+    const aandrijving = (parts[aandrijvingIdx] ?? '').trim();
+    const chassisnummer = (parts[chassisnummerIdx] ?? '').trim();
     const verzekerd = (parts[verzekerdIdx] ?? '').trim();
     const verzekertype = (parts[verzekertypeIdx] ?? '').trim();
+    const polisnummer = (parts[polisnummerIdx] ?? '').trim();
+    const startDatum = (parts[startDatumIdx] ?? '').trim();
+    const eindDatum = (parts[eindDatumIdx] ?? '').trim();
+    const opmerking = (parts[opmerkingIdx] ?? '').trim();
 
     if (!kenteken) {
       errors.push(`Rij ${lineNum}: kolom "kenteken" is verplicht en mag niet leeg zijn.`);
@@ -200,6 +219,15 @@ export function parseAndValidateVehicleCsv(csvContent: string): CsvParseResult {
       errors.push(`Rij ${lineNum}: "afdeling" vereist een "structuur".`);
       continue;
     }
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (startDatum && !dateRegex.test(startDatum)) {
+      errors.push(`Rij ${lineNum}: ongeldige "start_datum" "${startDatum}". Gebruik YYYY-MM-DD.`);
+      continue;
+    }
+    if (eindDatum && !dateRegex.test(eindDatum)) {
+      errors.push(`Rij ${lineNum}: ongeldige "eind_datum" "${eindDatum}". Gebruik YYYY-MM-DD.`);
+      continue;
+    }
 
     if (previewRows.length < maxPreview) {
       previewRows.push({
@@ -212,6 +240,15 @@ export function parseAndValidateVehicleCsv(csvContent: string): CsvParseResult {
         afdeling,
         soort: soort || '—',
         status: status || 'Goed',
+        transmissie,
+        aandrijving,
+        chassisnummer,
+        verzekerd,
+        verzekertype,
+        polisnummer,
+        start_datum: startDatum,
+        eind_datum: eindDatum,
+        opmerking,
       });
     }
   }

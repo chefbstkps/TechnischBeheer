@@ -34,6 +34,12 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  text-align: left;
   padding: 1rem 1.25rem;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -61,6 +67,15 @@
   font-size: 0.875rem;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+.vehicle-stat-totaal {
+  border-left: 3px solid var(--text-secondary);
+}
+
+.vehicle-stat-totaal svg,
+.vehicle-stat-totaal .vehicle-stat-value {
+  color: var(--text-secondary);
 }
 
 .vehicle-stat-goed {
@@ -97,6 +112,36 @@
 .vehicle-stat-defect svg,
 .vehicle-stat-defect .vehicle-stat-value {
   color: var(--error);
+}
+
+.vehicle-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.vehicle-stat-active.vehicle-stat-totaal {
+  box-shadow: 0 0 0 2px var(--text-secondary), 0 4px 12px rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vehicle-stat-active.vehicle-stat-goed {
+  box-shadow: 0 0 0 2px var(--success), 0 4px 12px rgba(52, 211, 153, 0.25);
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.vehicle-stat-active.vehicle-stat-redelijk {
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(56, 189, 248, 0.25);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.vehicle-stat-active.vehicle-stat-slecht {
+  box-shadow: 0 0 0 2px var(--warning), 0 4px 12px rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.vehicle-stat-active.vehicle-stat-defect {
+  box-shadow: 0 0 0 2px var(--error), 0 4px 12px rgba(248, 113, 113, 0.25);
+  background: rgba(248, 113, 113, 0.08);
 }
 
 .vehicle-management-columns-row {
@@ -341,8 +386,52 @@
   color: var(--text-secondary);
 }
 
+.vehicle-management .import-preview-table th,
+.vehicle-management .import-preview-table td {
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
+
+.vehicle-management .import-preview-table td.csv-opmerking-cell {
+  white-space: normal;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .vehicle-management .import-preview-table tr:last-child td {
   border-bottom: none;
+}
+
+.vehicle-management .csv-required-marker {
+  color: var(--error, #f87171);
+  font-weight: 700;
+  margin-left: 1px;
+}
+
+.vehicle-management .csv-columns-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.vehicle-management .csv-columns-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.vehicle-management .csv-columns-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-shrink: 0;
 }
 
 .vehicle-management .import-preview-meta {
